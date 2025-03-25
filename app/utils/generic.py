@@ -11,6 +11,7 @@ from re import search, sub
 from stat import S_IRWXG, S_IRWXO, S_IRWXU
 from typing import Any, Callable, Generator
 
+import psutil
 import requests
 import vdf  # type: ignore
 from loguru import logger
@@ -219,7 +220,7 @@ def launch_game_process(game_install_path: Path, args: list[str]) -> None:
         else:
             logger.error("Unable to launch the game on an unknown system")
             return
-        
+
         logger.info(f"Path to game executable generated: {executable_path}")
         if os.path.exists(executable_path):
             logger.info(
@@ -418,28 +419,6 @@ def check_valid_http_git_url(url: str) -> bool:
     return url and url != "" and url.startswith("http://") or url.startswith("https://")
 
 
-def get_path_up_to_string(path: Path, stop_string: str, exclude: bool = False) -> Path | str:
-    """
-    Returns a Path up to the stop_string.
-
-    :param path: Path to search
-    :param stop_string: str that path is returned up to.
-    :param exclude: bool, decides if stop_string is excluded from returned path
-    :return: Path up to stop_string or empty str if stop_string is not present
-    """
-    parts = path.parts
-
-    try:
-        stop_idx = parts.index(stop_string)
-        if exclude:
-            return Path(*parts[:stop_idx])
-        else:
-            return Path(*parts[:stop_idx + 1])
-    except ValueError:
-        # Stop string is not present
-        return ""
-
-
 def find_steam_rimworld(steam_folder: Path | str) -> str:
     """
     This should be compatible cross-platform.
@@ -485,3 +464,52 @@ def find_steam_rimworld(steam_folder: Path | str) -> str:
     full_rimworld_path = Path(rimworld_path) / "steamapps/common/RimWorld"
 
     return str(full_rimworld_path) if rimworld_path else rimworld_path
+
+
+def get_path_up_to_string(path: Path, stop_string: str, exclude: bool = False) -> Path | str:
+    """
+    Returns a Path up to the stop_string.
+
+    :param path: Path to search
+    :param stop_string: str that path is returned up to.
+    :param exclude: bool, decides if stop_string is excluded from returned path
+    :return: Path up to stop_string or empty str if stop_string is not present
+    """
+    parts = path.parts
+
+    try:
+        stop_idx = parts.index(stop_string)
+        if exclude:
+            return Path(*parts[:stop_idx])
+        else:
+            return Path(*parts[:stop_idx + 1])
+    except ValueError:
+        # Stop string is not present
+        return ""
+
+
+def check_if_steam_running() -> bool:
+    """
+    Check if Steam is running
+
+    Returns:
+        bool: True if Steam is running, False otherwise
+    """
+    steam_process_name = {
+        "Windows": "steam.exe",
+        "Darwin": "steam",
+        "Linux": "steam",
+    }
+
+    system = platform.system()
+    process_name = steam_process_name.get(system, None)
+
+    if process_name is None:
+        logger.error(f"Unknown system: {system}, when checking if Steam is running")
+        return False
+
+    for process in psutil.process_iter():
+        if process.name() == process_name:
+            return True
+
+    return False

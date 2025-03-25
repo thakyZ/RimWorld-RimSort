@@ -1,6 +1,7 @@
 from functools import partial
 from typing import Callable, Self, TypeVar
 
+from loguru import logger
 from PySide6.QtCore import QEvent, QObject, QSize, Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
@@ -19,6 +20,8 @@ from PySide6.QtWidgets import (
 
 from app.utils.event_bus import EventBus
 from app.utils.metadata import MetadataManager
+from app.utils.generic import check_if_steam_running
+from app.views.dialogue import show_information, show_warning
 
 # By default, we assume Stretch for all columns.
 # Tuples should be used if this should be overridden
@@ -218,11 +221,23 @@ class BaseModsPanel(QWidget):
             EventBus().do_steamcmd_download.emit(steamcmd_publishedfileids)
         # If we have any Steam mods designated to be updated
         if len(steam_publishedfileids) > 0:
+            # First check if steam is running
+            if not check_if_steam_running():
+                logger.warning("Steam is not running. Cannot resubscribe to Steam mods.")
+                show_warning(
+                    title="Steam not running",
+                    text="Unable to resubscribe to Steam mods. Ensure Steam is running and try again.",
+                )
+                return
             EventBus().do_steamworks_api_call.emit(
                 [
                     steamworks_cmd,
                     [eval(str_pfid) for str_pfid in steam_publishedfileids],
                 ]
+            )
+            show_information(
+                title="Finished Updating Steam Mods",
+                text="Updates may require running Steam Validation to be reflected.",
             )
         completed(self)
 

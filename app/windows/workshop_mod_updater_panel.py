@@ -7,6 +7,9 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+from app.utils.generic import check_if_steam_running
+from app.views.dialogue import show_information, show_warning
+
 from app.windows.base_mods_panel import BaseModsPanel
 
 
@@ -21,7 +24,7 @@ class ModUpdaterPrompt(BaseModsPanel):
         super().__init__(
             object_name="updateModsPanel",
             window_title="RimSort - Updates found for Workshop mods",
-            title_text="There updates available for Workshop mods!",
+            title_text="There are updates available for Workshop mods!",
             details_text="\nThe following table displays Workshop mods available for update from Steam.",
             additional_columns=[
                 "Name",
