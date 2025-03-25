@@ -448,7 +448,7 @@ class MainContent(QObject):
             item = iml.selectedItems()[0]
             data = item.data(Qt.ItemDataRole.UserRole)
             uuid = data["uuid"]
-            self.__mod_list_slot(uuid, cast(CustomListWidgetItem, item))
+            self.__mod_list_slot(uuid, item)
 
         elif key == "Return" or key == "Space" or key == "DoubleClick":
             # TODO: graphical bug where if you hold down the key, items are

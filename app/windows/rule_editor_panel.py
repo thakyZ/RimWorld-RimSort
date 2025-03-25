@@ -71,7 +71,9 @@ class EditableDelegate(QItemDelegate):
                 logger.error(error_msg)
 
         # Handle case where wrong column is being edited
-        return QLineEdit(parent, readOnly=True)  # Return a basic editor as fallback
+        output = QLineEdit(parent)  # Return a basic editor as fallback
+        output.setReadOnly()
+        return output
 
     def setEditorData(
         self, editor: QWidget, index: QModelIndex | QPersistentModelIndex

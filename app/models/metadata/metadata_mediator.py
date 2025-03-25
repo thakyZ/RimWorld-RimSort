@@ -68,7 +68,7 @@ class MetadataMediator:
         """Mods_metadata is a dict representation of all the listedmods, where the key is
         the path to the mod.
 
-        :raises ValueError: Raised when mods_metadata has not been initated
+        :raises ValueError: Raised when mods_metadata has not been initiated
         :return: A dict represented of ListedMods, where the key is the path to the mod.
         :rtype: dict[str, ListedMod]
         """

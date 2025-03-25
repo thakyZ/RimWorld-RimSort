@@ -10,6 +10,7 @@ pretty = true
 warn_redundant_casts = true
 warn_unused_configs = true
 warn_unused_ignores = true
+plugins = 'sqlmypy'
 exclude = ['venv', '.venv', 'submodules']
 
 [[tool.mypy.overrides]]
@@ -31,9 +32,7 @@ addopts = [
 ]
 pythonpath = '.'
 testpaths = ['tests']
-
 # exclude submodules from test discovery
-[tool.pytest]
 norecursedirs = ['submodules']
 
 [tool.pyright]

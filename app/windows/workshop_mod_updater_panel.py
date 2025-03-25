@@ -3,12 +3,7 @@ from time import localtime, strftime
 
 from loguru import logger
 from PySide6.QtGui import QStandardItem
-from PySide6.QtWidgets import (
-    QPushButton,
-)
-
-from app.utils.generic import check_if_steam_running
-from app.views.dialogue import show_information, show_warning
+from PySide6.QtWidgets import QPushButton
 
 from app.windows.base_mods_panel import BaseModsPanel
 

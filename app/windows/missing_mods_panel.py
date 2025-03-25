@@ -2,11 +2,9 @@ from functools import partial
 from typing import Any
 
 from loguru import logger
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QStandardItem
-from PySide6.QtWidgets import (
-    QComboBox,
-    QPushButton,
-)
+from PySide6.QtWidgets import QComboBox, QPushButton
 
 from app.utils.constants import RIMWORLD_DLC_METADATA
 from app.utils.generic import check_if_steam_running
@@ -18,6 +16,8 @@ class MissingModsPrompt(BaseModsPanel):
     """
     A generic panel used to prompt a user to download missing mods
     """
+
+    steamcmd_downloader_signal = Signal(list)
 
     def __init__(
         self,

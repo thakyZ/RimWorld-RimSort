@@ -1,20 +1,23 @@
 {
-  "editor.formatOnType": true,
-  "editor.formatOnPaste": true,
-  "editor.formatOnSave": true,
-  "search.maxResults": 100000,
-  "python.terminal.activateEnvironment": true,
-  "python.terminal.activateEnvInCurrentTerminal": true,
-  "mypy.runUsingActiveInterpreter": true,
-  "editor.codeActionsOnSave": {
-    "source.organizeImports": "explicit"
+  "[python]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    },
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true
   },
   "autoDocstring.docstringFormat": "sphinx",
+  "cSpell.ignorePaths": [
+    "**test**"
+  ],
   "cSpell.words": [
     "apikey",
     "appworkshop",
+    "brrainz",
     "Cascadia",
     "creationflags",
+    "cpython",
     "Databasebuilder",
     "docstrings",
     "Eventbus",
@@ -26,6 +29,7 @@
     "incompatiblewithbyversion",
     "isort",
     "joseasoler",
+    "krkr",
     "loadafter",
     "loadafterbyversion",
     "loadbefore",
@@ -43,6 +47,7 @@
     "psutil",
     "publishedfileid",
     "publishedfileids",
+    "pysqlite",
     "redistributables",
     "Rentry",
     "rimsort",
@@ -59,21 +64,25 @@
     "timetouched",
     "timeupdated",
     "topo",
+    "todds",
+    "QTWEBENGINE",
     "toposort",
     "unpolish",
     "virtualenv",
-    "webapi"
+    "webapi",
+    "nuitka",
+    "zetrith"
   ],
-  "cSpell.ignorePaths": ["**test**"],
-  "isort.args": ["--profile", "black"],
-  "[python]": {
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.fixAll": "explicit",
-      "source.organizeImports": "explicit"
-    },
-    "editor.defaultFormatter": "charliermarsh.ruff"
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
   },
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
+  "isort.args": [
+    "--profile",
+    "black"
+  ],
   "languageToolLinter.languageTool.ignoredWordsInWorkspace": [
     " macport",
     "codium",
@@ -94,10 +103,16 @@
     "todds",
     "virtualenv"
   ],
+  "mypy.runUsingActiveInterpreter": true,
+  "python.terminal.activateEnvInCurrentTerminal": true,
+  "python.terminal.activateEnvironment": true,
+  "python.testing.pytestArgs": [
+    "."
+  ],
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "search.maxResults": 100000,
   "yaml.schemas": {
     "https://json.schemastore.org/github-issue-config.json": "file:///c%3A/Code%20Repos/RimSort/.github/ISSUE_TEMPLATE/config.yml"
-  },
-  "python.testing.pytestArgs": ["."],
-  "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+  }
 }

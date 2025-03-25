@@ -19,8 +19,8 @@ from PySide6.QtWidgets import (
 )
 
 from app.utils.event_bus import EventBus
-from app.utils.metadata import MetadataManager
 from app.utils.generic import check_if_steam_running
+from app.utils.metadata import MetadataManager
 from app.views.dialogue import show_information, show_warning
 
 # By default, we assume Stretch for all columns.

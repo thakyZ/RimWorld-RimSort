@@ -15,7 +15,7 @@ import psutil
 import requests
 import vdf  # type: ignore
 from loguru import logger
-from pyperclip import (  # type: ignore # Stubs don't exist for pyperclip
+from pyperclip import (  # Stubs don't exist for pyperclip
     copy as copy_to_clipboard,
 )
 from requests import post as requests_post
