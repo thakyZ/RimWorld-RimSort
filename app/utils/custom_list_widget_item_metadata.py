@@ -10,6 +10,15 @@ class CustomListWidgetItemMetadata:
     """
     A class to store metadata for CustomListWidgetItem.
 
+    Attributes:
+        uuid: str, the uuid of the mod which corresponds to a mod's metadata
+        errors_warnings: str, a string of errors and warnings
+        errors: str, a string of errors for the notification tooltip
+        warnings: str, a string of warnings for the notification tooltip
+        warning_toggled: bool, representing if the warning/error icons are toggled off
+        filtered: bool, representing whether the widget's item is filtered
+        invalid: bool, representing whether the widget's item is an invalid mod
+        mismatch: bool, representing whether the widget's item has a version mismatch
     """
 
     def __init__(
@@ -25,6 +34,7 @@ class CustomListWidgetItemMetadata:
         mismatch: bool | None = None,
         mod_color: QColor | None = None,
         alternative: str | None = None,
+        user_notes: str = "",
     ) -> None:
         """
         Must provide a uuid, the rest is optional.
@@ -42,6 +52,7 @@ class CustomListWidgetItemMetadata:
         :param mismatch: a bool representing whether the widget's item has a version mismatch
         :param mod_color: QColor, the color of the mod's text/background in the modlist
         :param alternative: a bool representing whether the widget's item has an alternative mod in the "Use This Instead" database
+        :param user_notes: str, representing the users own notes for this mod
         """
         # Do not cache the metadata manager, it will cause freezes/crashes when dragging mods.
         # self.metatadata_manager = MetadataManager.instance()
@@ -69,6 +80,7 @@ class CustomListWidgetItemMetadata:
         logger.debug(
             f"Finished initializing CustomListWidgetItemMetadata for uuid: {uuid}"
         )
+        self.user_notes = user_notes
 
     def get_invalid_by_uuid(self, uuid: str) -> bool:
         """
