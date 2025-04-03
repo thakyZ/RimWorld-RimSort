@@ -10,7 +10,7 @@ pretty = true
 warn_redundant_casts = true
 warn_unused_configs = true
 warn_unused_ignores = true
-plugins = 'sqlmypy'
+plugins = 'sqlalchemy.ext.mypy.plugin'
 exclude = ['venv', '.venv', 'submodules']
 
 [[tool.mypy.overrides]]

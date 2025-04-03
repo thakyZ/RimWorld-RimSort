@@ -12,6 +12,7 @@
     "**test**"
   ],
   "cSpell.words": [
+    "-rmqq",
     "apikey",
     "appworkshop",
     "brrainz",
@@ -41,6 +42,8 @@
     "MODNAME",
     "natsort",
     "natsorted",
+    "ncipollo",
+    "norecursedirs",
     "pfid",
     "pfids",
     "playerfaction",

@@ -164,6 +164,9 @@ bin/
 lib64
 pyvenv.cfg
 
+# Nuitka
+nuitka/
+
 # RimSort
 DEBUG
 .DS_Store
