@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sys
 from enum import Enum
 from errno import ENOTEMPTY
@@ -10,6 +11,7 @@ from traceback import format_exc
 from typing import Any, KeysView, cast
 
 from loguru import logger
+from lxml import etree
 from PySide6.QtCore import (
     QEvent,
     QEventLoop,
@@ -2441,6 +2443,21 @@ class ModListWidget(QListWidget):
                 except Exception as e:
                     stacktrace = format_exc()
                     logger.error(f"Failed to convert mod: {path} - {e}")
+                    logger.error(stacktrace)
+            about_file = Path(renamed_mod_path, "About", "About.xml")
+            if about_file.exists():
+                try:
+                    root_element = etree.parse(about_file, parser=etree.XMLParser(recover=True))
+                    package_id = root_element.find("/ModMetaData/packageId")
+                    if package_id is not None and package_id.text is not None:
+                        suffix = ".local"
+                        if re.match(r'[A-Z]', package_id.text) is not None:
+                            suffix = ".Local"
+                        package_id.text = f"{package_id.text}{suffix}"
+                    root_element.write(about_file)
+                except Exception as e:
+                    stacktrace = format_exc()
+                    logger.error(f"Failed to convert modify the about file for mod {path} - {e}")
                     logger.error(stacktrace)
 
     def unsubscribe_from_steam_mods(self, publishedfileids: KeysView[Any]) -> bool:
