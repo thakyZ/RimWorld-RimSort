@@ -678,7 +678,7 @@ class MetadataManager(QObject):
                 for version, dependencies_by_ver in self.internal_local_metadata[uuid][
                     "moddependenciesbyversion"
                 ].items():
-                    if match(version_regex, version):
+                    if dependencies_by_ver and match(version_regex, version):
                         if (
                             dependencies_by_ver
                             and isinstance(dependencies_by_ver, dict)
