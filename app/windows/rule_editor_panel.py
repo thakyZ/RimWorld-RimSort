@@ -72,7 +72,7 @@ class EditableDelegate(QItemDelegate):
 
         # Handle case where wrong column is being edited
         output = QLineEdit(parent)  # Return a basic editor as fallback
-        output.setReadOnly()
+        output.setReadOnly(True)
         return output
 
     def setEditorData(
