@@ -1281,17 +1281,25 @@ class ModListWidget(QListWidget):
                     action == re_steamcmd_action
                     and len(steamcmd_publishedfileid_to_name.keys()) > 0
                 ):
-                    logger.debug(steamcmd_publishedfileid_to_name)
+                    logger.debug(
+                        f"Selected mods for deleting + redownloading: {steamcmd_publishedfileid_to_name}"
+                    )
+                    steamcmd_publishedfileid_to_redownload = (
+                        steamcmd_publishedfileid_to_name.keys()
+                    )
+                    logger.debug(
+                        f"Selected publishedfileid for deleting + redownloading: {steamcmd_publishedfileid_to_redownload}"
+                    )
                     # Prompt user
                     answer = show_dialogue_conditional(
                         title="Are you sure?",
-                        text=f"You have selected {len(steamcmd_publishedfileid_to_name.keys())} mod(s) for deletion + re-download.",
+                        text=f"You have selected {len(steamcmd_publishedfileid_to_redownload)} mods for deletion + re-download.",
                         information="\nThis operation will recursively delete all mod files, except for .dds textures found, "
                         + "and attempt to re-download the mods via SteamCMD. Do you want to proceed?",
                     )
                     if answer == "&Yes":
                         logger.debug(
-                            f"Deleting + redownloading {len(steamcmd_publishedfileid_to_name.keys())} SteamCMD mod(s)"
+                            f"Deleting + redownloading {len(steamcmd_publishedfileid_to_redownload)} SteamCMD mod(s)"
                         )
                         for path in steamcmd_mod_paths:
                             # Delete all files except .dds
@@ -1300,13 +1308,16 @@ class ModListWidget(QListWidget):
                             )
                             # Calculate SteamCMD mod publishedfileids to purge from acf metadata
                             steamcmd_acf_pfid_purge = set(
-                                steamcmd_publishedfileid_to_name.keys()
+                                steamcmd_publishedfileid_to_redownload
                             )
                         # Purge any deleted SteamCMD mods from acf metadata
                         self.purge_steamcmd_mods_from_acf(steamcmd_acf_pfid_purge)
                         # Emit signal to steamcmd downloader to re-download
+                        logger.debug(
+                            f"Emitting steamcmd_downloader_signal for {list(steamcmd_publishedfileid_to_redownload)}"
+                        )
                         self.steamcmd_downloader_signal.emit(
-                            list(steamcmd_publishedfileid_to_name.keys())
+                            list(steamcmd_publishedfileid_to_redownload)
                         )
                     return True
                 elif (  # ACTION: Convert Steam mod(s) -> local + unsubscribe

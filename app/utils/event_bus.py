@@ -116,6 +116,10 @@ class EventBus(QObject):
     use_this_instead_clicked = Signal()
     reset_use_this_instead_cache = Signal()
 
+    # Help Menu bar signals
+    do_check_for_application_update = Signal()
+    do_check_for_update_startup = Signal()
+
     def __new__(cls) -> "EventBus":
         """
         Create a new instance or return the existing singleton instance of the `EventBus` class.
