@@ -14,7 +14,7 @@ from math import ceil
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from tempfile import gettempdir
-from typing import TYPE_CHECKING, Any, Callable, Self, cast
+from typing import TYPE_CHECKING, Any, Callable, Self
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
@@ -502,7 +502,7 @@ class MainContent(QObject):
             item = aml.selectedItems()[0]
             data = item.data(Qt.ItemDataRole.UserRole)
             uuid = data["uuid"]
-            self.__mod_list_slot(uuid, cast(CustomListWidgetItem, item))
+            self.__mod_list_slot(uuid, item)
 
         elif key == "Return" or key == "Space" or key == "DoubleClick":
             # TODO: graphical bug where if you hold down the key, items are
@@ -1736,19 +1736,30 @@ class MainContent(QObject):
 
     def _do_open_rimworld_logs_directory(self) -> None:
         user_home = Path.home()
+        current_instance = self.settings_controller.settings.current_instance
+        run_args = getattr(
+            self.settings_controller.settings.instances[current_instance],
+            "run_args",
+            None,
+        )
         logs_directory = None
-        if SystemInfo().operating_system == SystemInfo.OperatingSystem.MACOS:
-            logs_directory = (
-                user_home / "Library/Logs/Ludeon Studios/RimWorld by Ludeon Studios"
-            )
-        elif SystemInfo().operating_system == SystemInfo.OperatingSystem.LINUX:
-            logs_directory = (
-                user_home / ".config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios"
-            )
-        elif SystemInfo().operating_system == SystemInfo.OperatingSystem.WINDOWS:
-            logs_directory = (
-                user_home / "AppData/LocalLow/Ludeon Studios/RimWorld by Ludeon Studios"
-            )
+        if run_args is not None:
+            for i, arg in enumerate(run_args):
+                if arg == '-logfile':
+                    logs_directory = Path(run_args[i + 1]).parent
+        if logs_directory is None:
+            if SystemInfo().operating_system == SystemInfo.OperatingSystem.MACOS:
+                logs_directory = (
+                    user_home / "Library/Logs/Ludeon Studios/RimWorld by Ludeon Studios"
+                )
+            elif SystemInfo().operating_system == SystemInfo.OperatingSystem.LINUX:
+                logs_directory = (
+                    user_home / ".config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios"
+                )
+            elif SystemInfo().operating_system == SystemInfo.OperatingSystem.WINDOWS:
+                logs_directory = (
+                    user_home / "AppData/LocalLow/Ludeon Studios/RimWorld by Ludeon Studios"
+                )
 
         if logs_directory and logs_directory.exists():
             logger.info(f"Opening RimWorld logs directory: {logs_directory}")
