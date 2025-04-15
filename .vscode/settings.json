@@ -1,11 +1,6 @@
 {
   "[python]": {
-    "editor.codeActionsOnSave": {
-      "source.fixAll": "explicit",
-      "source.organizeImports": "explicit"
-    },
     "editor.defaultFormatter": "charliermarsh.ruff",
-    "editor.formatOnSave": true
   },
   "autoDocstring.docstringFormat": "sphinx",
   "cSpell.ignorePaths": [
@@ -76,12 +71,6 @@
     "nuitka",
     "zetrith"
   ],
-  "editor.codeActionsOnSave": {
-    "source.organizeImports": "explicit"
-  },
-  "editor.formatOnPaste": true,
-  "editor.formatOnSave": true,
-  "editor.formatOnType": true,
   "isort.args": [
     "--profile",
     "black"
