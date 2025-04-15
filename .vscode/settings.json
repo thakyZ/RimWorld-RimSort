@@ -71,6 +71,22 @@
     "nuitka",
     "zetrith"
   ],
+  "markdownlint.config": {
+    "no-inline-html": {
+      "allowed_elements": ["p","h1","strong","a","br"]
+    },
+    "blanks-around-headings": {
+      "lines_above": 0
+    },
+    "no-multiple-blanks": {
+      "maximum": 2
+    },
+    "first-line-heading": false,
+    "first-line-h1": false,
+    "link-image-reference-definitions": {
+      "ignored_definitions": [ "repo", "//" ]
+    }
+  },
   "isort.args": [
     "--profile",
     "black"
