@@ -621,7 +621,16 @@ Begin {
                 $AccessToken,
 
                 [Parameter(Mandatory = $False,
-                    HelpMessage = "Mode in which to compile. Accelerated runs in your Python`ninstallation and depends on it. Standalone creates a folder`nwith an executable contained to run it. Onefile creates a`nsingle executable to deploy. App is onefile except on macOS`nwhere it's not to be used. Module makes a module, and`npackage includes also all sub-modules and sub-packages. Dll`nis currently under development and not for users yet.`nDefault is 'accelerated'.")]
+                    HelpMessage = @"
+Mode in which to compile. Accelerated runs in your Python
+installation and depends on it. Standalone creates a folder
+with an executable contained to run it. Onefile creates a
+single executable to deploy. App is onefile except on macOS
+where it's not to be used. Module makes a module, and
+package includes also all sub-modules and sub-packages. Dll
+is currently under development and not for users yet.
+Default is 'accelerated'.
+"@)]
                 [ValidateNotNullOrWhiteSpace()]
                 [string]
                 $Mode = 'app',
@@ -633,13 +642,24 @@ Begin {
                 $FileDescription,
 
                 [Parameter(Mandatory = $False,
-                    HelpMessage = "Include data files by filenames in the distribution. There are many`nallowed forms. With '--include-data-files=/path/to/file/*.txt=folder_name/some.txt' it`nwill copy a single file and complain if it's multiple. With`n'--include-data-files=/path/to/files/*.txt=folder_name/' it will put`nall matching files into that folder. For recursive copy there is a`nform with 3 values that '--include-data-files=/path/to/scan=folder_name/=**/*.txt'`nthat will preserve directory structure. Default empty.")]
+                    HelpMessage = @"
+Include data files by filenames in the distribution. There are many
+allowed forms. With '--include-data-files=/path/to/file/*.txt=folder_name/some.txt' it
+will copy a single file and complain if it's multiple. With
+'--include-data-files=/path/to/files/*.txt=folder_name/' it will put
+all matching files into that folder. For recursive copy there is a
+form with 3 values that '--include-data-files=/path/to/scan=folder_name/=**/*.txt'
+that will preserve directory structure. Default empty.
+"@)]
                 [ValidateNotNullOrEmpty()]
                 [string[]]
                 $IncludeDataFiles,
 
                 [Parameter(Mandatory = $False,
-                    HelpMessage = "Product version to use in version information. Same rules as for file version.`nDefaults to unused.")]
+                    HelpMessage = @"
+Product version to use in version information. Same rules as for file version.
+Defaults to unused.
+"@)]
                 [AllowNull()]
                 [string]
                 $ProductVersion
@@ -816,13 +836,19 @@ Begin {
         # Rename new build
         Push-Location -LiteralPath build;
         Move-Item -LiteralPath $env:BUILD_OUTPUT -Destination "output";
-        tar -cvf "$($env:FILENAME).tar" "output" 2>&1 | Out-Host;
+        If ($IsWindows) {
+            Compress-Archive -LiteralPath "output" -DestinationPath "$($env:FILENAME).tar";
+        } Else {
+            tar -cvf "$($env:FILENAME).tar" "output" 2>&1 | Out-Host;
+        }
         Remove-Item -Recurse -Force -LiteralPath "output";
         Pop-Location;
 
         # Generate artifact attestation
 
-        If ($AtTest) {
+        If ($AtTest -and $IsWindows) {
+            Invoke-AtTestBuildProvenance -SubjectPath "./build/$($env:FILENAME).zip"
+        } ElseIf ($AtTest) {
             Invoke-AtTestBuildProvenance -SubjectPath "./build/$($env:FILENAME).tar"
         }
 
@@ -856,8 +882,6 @@ Begin {
         }
 
         Invoke-UploadArtifact -Name $env:FILENAME -Path "./build/$($env:FILENAME).tar" -IfNoFilesFound 'error';
-    } Catch {
-        Throw;
     } Finally {
         $env:GitHubToken = '';
     }
