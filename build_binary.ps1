@@ -222,112 +222,127 @@ Begin {
                     }
                 }
 
-                Function Invoke-BumpAlwaysVersionClassify {
-                    [SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "")]
-                    [CmdletBinding()]
-                    [OutputType([PSObject])]
-                    Param()
-
-                    Begin {
-                        [PSObject] $Output = [PSObject]::new();
-                    } Process {
-                        # if (lastRelease.currentPatch !== null) {
-                        #     return new VersionClassification(VersionType.None, 0, false, <number>lastRelease.currentMajor, <number>lastRelease.currentMinor, <number>lastRelease.currentPatch);
-                        # }
-
-                        # let { major, minor, patch } = lastRelease;
-                        # let type = VersionType.None;
-                        # let increment = 0;
-
-                        # if (commitSet.commits.length === 0) {
-                        #     return new VersionClassification(type, 0, false, major, minor, patch);
-                        # }
-
-                        # for (let commit of commitSet.commits.reverse()) {
-
-                        #     if (this.majorPattern(commit)) {
-                        #         type = VersionType.Major;
-                        #     } else if (this.minorPattern(commit)) {
-                        #         type = VersionType.Minor;
-                        #     } else if (this.patchPattern(commit) ||
-                        #         (major === 0 && minor === 0 && patch === 0 && commitSet.commits.length > 0)) {
-                        #         type = VersionType.Patch;
-                        #     } else {
-                        #         type = VersionType.None;
-                        #     }
-
-
-                        #     if (this.enablePrereleaseMode && major === 0) {
-                        #         switch (type) {
-                        #             case VersionType.Major:
-                        #             case VersionType.Minor:
-                        #                 minor += 1;
-                        #                 patch = 0;
-                        #                 increment = 0;
-                        #                 break;
-                        #             case VersionType.Patch:
-                        #                 patch += 1;
-                        #                 increment = 0;
-                        #                 break;
-                        #             default:
-                        #                 increment++;
-                        #                 break;
-                        #         }
-                        #     } else {
-                        #         switch (type) {
-                        #             case VersionType.Major:
-                        #                 major += 1;
-                        #                 minor = 0;
-                        #                 patch = 0;
-                        #                 increment = 0;
-                        #                 break;
-                        #             case VersionType.Minor:
-                        #                 minor += 1;
-                        #                 patch = 0;
-                        #                 break;
-                        #             case VersionType.Patch:
-                        #                 patch += 1;
-                        #                 increment = 0;
-                        #                 break;
-                        #             default:
-                        #                 increment++;
-                        #                 break;
-                        #         }
-                        #     }
-
-                        # }
-                        $Output | Add-Member -Name "RevParse" -MemberType NoteProperty -Value $RevParse;
-                        $Output | Add-Member -Name "IsEmptyRepo" -MemberType NoteProperty -Value $IsEmptyRepo;
-                    } End {
-                        Write-Output -NoEnumerate -InputObject $Output;
-                    }
-                }
-
                 Function Invoke-VersionClassify {
-                    [SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "")]
+                    # [SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "")]
                     [CmdletBinding()]
                     [OutputType([PSObject])]
-                    Param()
+                    Param(
+                        # Specifies a PSObject that determines the last release.
+                        [Parameter(Mandatory = $True,
+                                   HelpMessage = 'A PSObject that determines the last release.')]
+                        [PSObject]
+                        $LastRelease,
+                        # Specifies a PSObject that determines the set of commits in the repository.
+                        [Parameter(Mandatory = $True,
+                                   HelpMessage = 'A PSObject that determines the set of commits in the repository.')]
+                        [PSObject]
+                        $CommitsSet
+                    )
 
                     Begin {
+                        Function Get-ParsePattern {
+                            [CmdletBinding()]
+                            [OutputType([ScriptBlock])]
+                            Param(
+                                # Specifies a pattern to test against.
+                                [Parameter(Mandatory = $True,
+                                           HelpMessage = 'A pattern to test against.')]
+                                [string]
+                                $Pattern,
+                                # Specifies a set of flags to test against.
+                                [Parameter(Mandatory = $True,
+                                           HelpMessage = 'A set of flags to test against..')]
+                                [ValidatePattern('[idgs]{1,4}')]
+                                [string]
+                                $Flags,
+                                # Specifies the text to search against
+                                [Parameter(Mandatory = $True,
+                                           HelpMessage = 'The text to search against.')]
+                                [AllowEmptyString()]
+                                [AllowNull()]
+                                [string]
+                                $SearchBody
+                            )
+                        }
                         [PSObject] $Output = [PSObject]::new();
-                        # this.majorPattern = this.parsePattern(config.majorPattern,config.majorFlags, searchBody);
-                        # this.minorPattern = this.parsePattern(config.minorPattern,config.minorFlags, searchBody);
-                        # this.enablePrereleaseMode = config.enablePrereleaseMode;
+                        [string] $MajorPattern = (Get-ParsePattern -Pattern $Config.MajorPattern -Flags $Config.MajorFlags -Text $SearchBody);
+                        [string] $MinorPattern = (Get-ParsePattern -Pattern $Config.MinorPattern -Flags $Config.MinorFlags -Text $SearchBody);
+                        [bool] $EnablePrereleaseMode = $EnablePrereleaseMode;
+                        [string] $Type = 'None';
+                        [int] $Increment = 0;
+                        [PSObject[]] $Changed = $Null;
                     } Process {
-                        # if (/^\/.+\/[i]*$/.test(pattern)) {
-                        #     const regexEnd = pattern.lastIndexOf('/');
-                        #     const parsedFlags = pattern.slice(pattern.lastIndexOf('/') + 1);
-                        #     const regex = new RegExp(pattern.slice(1, regexEnd), parsedFlags || flags);
-                        #     return searchBody ?
-                        #         (commit: CommitInfo) => regex.test(commit.subject) || regex.test(commit.body) :
-                        #         (commit: CommitInfo) => regex.test(commit.subject);
-                        # } else {
-                        #     const matchString = pattern;
-                        #     return searchBody ?
-                        #         (commit: CommitInfo) => commit.subject.includes(matchString) || commit.body.includes(matchString) :
-                        #         (commit: CommitInfo) => commit.subject.includes(matchString);
-                        # }
+                        [ScriptBlock] $RegexTester = $Null;
+                        If ('^\/.+\/[i]*$' -match $Pattern) {
+                            [int] $RegexEnd = $Pattern.LastIndexOf('/');
+                            [string] $ParsedFlags = $Pattern.Slice($RegexEnd + 1);
+                            If ([string]::IsNullOrWhiteSpace($ParsedFlags)) {
+                                $ParsedFlags = $Flags;
+                            }
+
+                            [Regex] $Regex = [Regex]::new($Pattern.Slice(1, $RegexEnd), $ParsedFlags);
+                            If ($SearchBody) {
+                                $RegexTester = {
+                                    Param(
+                                        # Specifies a PSObject containing commit information.
+                                        [Parameter(Mandatory = $True,
+                                                   HelpMessage = "A PSObject containing commit information.")]
+                                        [PSObject]
+                                        $Commit
+                                    )
+
+                                    Return $Commit.Subject -match $Regex -or $Commit.Body -match $Regex;
+                                }
+                            } Else {
+                                $RegexTester = {
+                                    Param(
+                                        # Specifies a PSObject containing commit information.
+                                        [Parameter(Mandatory = $True,
+                                                   HelpMessage = "A PSObject containing commit information.")]
+                                        [PSObject]
+                                        $Commit
+                                    )
+
+                                    Return $Commit.Subject -match $Regex;
+                                }
+                            }
+                        } Else {
+                            If ($SearchBody) {
+                                $RegexTester = {
+                                    Param(
+                                        # Specifies a PSObject containing commit information.
+                                        [Parameter(Mandatory = $True,
+                                                   HelpMessage = "A PSObject containing commit information.")]
+                                        [PSObject]
+                                        $Commit
+                                    )
+
+                                    Return $Commit.Subject -match $Pattern -or $Commit.Body -match $Pattern;
+                                }
+                            } Else {
+                                $RegexTester = {
+                                    Param(
+                                        # Specifies a PSObject containing commit information.
+                                        [Parameter(Mandatory = $True,
+                                                   HelpMessage = "A PSObject containing commit information.")]
+                                        [PSObject]
+                                        $Commit
+                                    )
+
+                                    Return $Commit.Subject -match $Pattern;
+                                }
+                            }
+                        }
+
+                        If ($CommitsSet.Commits.Length -eq 0) {
+                            $Changed = $CommitsSet.Changed;
+                        } Else {
+                            [PSObject[]] $Commits = $CommitsSet.Commits.Reverse();
+                            $Index = 1;
+                            For ($Commit in $Commits) {
+                                If ()
+                            }
+                        }
 
                         # if (commitsSet.commits.length === 0) {
                         #     return { type: VersionType.None, increment: 0, changed: commitsSet.changed };
@@ -397,9 +412,10 @@ Begin {
                         #     const currentIncrement = versionsMatch ? increment : 0;
                         #     return new VersionClassification(VersionType.None, currentIncrement, false, <number>lastRelease.currentMajor, <number>lastRelease.currentMinor, <number>lastRelease.currentPatch);
                         # }
-                        $Output | Add-Member -Name "RevParse" -MemberType NoteProperty -Value $RevParse;
-                        $Output | Add-Member -Name "IsEmptyRepo" -MemberType NoteProperty -Value $IsEmptyRepo;
                     } End {
+                        $Output | Add-Member -Name "Type" -MemberType NoteProperty -Value $Type;
+                        $Output | Add-Member -Name "Increment" -MemberType NoteProperty -Value $Increment;
+                        $Output | Add-Member -Name "Changed" -MemberType NoteProperty -Value $Changed;
                         Write-Output -NoEnumerate -InputObject $Output;
                     }
                 }
@@ -423,128 +439,76 @@ Begin {
                 Function Get-TagFormatted {
                     [SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "")]
                     [CmdletBinding()]
-                    [OutputType([PSObject])]
+                    [OutputType([string])]
                     Param()
 
                     Begin {
-                        [PSObject] $Output = [PSObject]::new();
+                        [string] $Output = $Null;
                     } Process {
-                        $Output | Add-Member -Name "RevParse" -MemberType NoteProperty -Value $RevParse;
-                        $Output | Add-Member -Name "IsEmptyRepo" -MemberType NoteProperty -Value $IsEmptyRepo;
                     } End {
                         Write-Output -NoEnumerate -InputObject $Output;
                     }
                 }
 
-                $CurrentCommitResolver = (Resolve-CurrentCommit);
+                [PSObject] $CurrentCommitResolved = (Resolve-CurrentCommit);
 
-                If (-not $CurrentCommitResolver.IsEmptyRepo) {
-                    $Major = (Resolve-CurrentCommit);
-                    $Minor = (Resolve-CurrentCommit);
-                    $Patch = (Resolve-CurrentCommit);
-                    $Increment = (Resolve-CurrentCommit);
-                    $VersionTag = (Resolve-CurrentCommit);
-                    $CurrentCommit = $CurrentCommitResolver.RevParse;
-                    If ($BumpEachCommit) {
-                        $FormattedVersion = (Invoke-BumpAlwaysVersionClassify);
-                    } Else {
-                        $FormattedVersion = (Invoke-VersionClassify);
+                If (-not $CurrentCommitResolved.IsEmptyRepo) {
+                    [PSObject] $LastRelease = (Resolve-LastRelease -CurrentCommit $CurrentCommitResolved -TagFormat $TagFormat);
+                    [PSObject] $CommitSet = (Get-Commits -LastReleaseHash $LastRelease.Hash -CurrentCommit $CurrentCommitResolved);
+                    [PSObject] $Classification = (Invoke-VersionClassify -LastRelease $LastRelease -CommitSet $CommitSet);
+
+                    $IsTagged = $LastRelease.IsTagged;
+
+                    $Major = $Classification.Major;
+                    $Minor = $Classification.Minor;
+                    $Patch = $Classification.Patch;
+                    $Increment = $Classification.Increment;
+                    $VersionTag = $CurrentCommitResolved.VersionTag;
+                    $CurrentCommit = $CurrentCommitResolved.RevParse;
+                    $Changed = $Classification.Changed;
+                    $VersionType = $Classification.VersionType;
+                    $PreviousVersion = (Invoke-FormatVersion -Release $LastRelease -Format '${lastRelease.major}.${lastRelease.minor}.${lastRelease.patch}');
+                    $FormattedVersion = (Invoke-FormatVersion -Classification $Classification -CurrentCommit $CurrentCommitResolved -Format $VersionFormat);
+                    [Hashtable] $AllAuthors = [ordered]@{};
+                    ForEach ($Commit in $CommitSet.Commits) {
+                        [string] $Key = "$($Commit.Author) <$($Commit.AuthorEmail)>";
+                        If (-not $AllAuthors.ContainsKey($Key)) {
+                            $AllAuthors[$Key] = [ordered]@{
+                                Name = $Commit.Author;
+                                Email = $Commit.AuthorEmail;
+                                Commits = 0
+                            };
+                        } Else {
+                            $AllAuthors[$Key].Commits++
+                        }
                     }
+                    [Hashtable[]] $AuthorsList = @($AllAuthors.Values | Sort-Object -Property Commits -Descending);
+                    [string] $Authors = (Format-Users -List $AuthorsList -Format $UserFormat);
                 }
-
-                # const currentCommitResolver = configurationProvider.GetCurrentCommitResolver();
-                # const lastReleaseResolver = configurationProvider.GetLastReleaseResolver();
-                # const commitsProvider = configurationProvider.GetCommitsProvider();
-                # const versionClassifier = configurationProvider.GetVersionClassifier();
-                # const versionFormatter = configurationProvider.GetVersionFormatter();
-                # const tagFormatter = configurationProvider.GetTagFormatter(await currentCommitResolver.ResolveBranchNameAsync());
-                # const userFormatter = configurationProvider.GetUserFormatter();
-
-                # const debugManager = DebugManager.getInstance();
-
-                # if (await currentCommitResolver.IsEmptyRepoAsync()) {
-
-                #     const versionInfo = new VersionInformation(0, 0, 0, 0, VersionType.None, [], false, false);
-                #     return new VersionResult(
-                #     versionInfo.major,
-                #     versionInfo.minor,
-                #     versionInfo.patch,
-                #     versionInfo.increment,
-                #     versionInfo.type,
-                #     versionFormatter.Format(versionInfo),
-                #     tagFormatter.Format(versionInfo),
-                #     versionInfo.changed,
-                #     versionInfo.isTagged,
-                #     userFormatter.Format('author', []),
-                #     '',
-                #     '',
-                #     tagFormatter.Parse(tagFormatter.Format(versionInfo)).join('.'),
-                #     debugManager.getDebugOutput(true)
-                #     );
-                # }
-
-                # const currentCommit = await currentCommitResolver.ResolveAsync();
-                # const lastRelease = await lastReleaseResolver.ResolveAsync(currentCommit, tagFormatter);
-                # const commitSet = await commitsProvider.GetCommitsAsync(lastRelease.hash, currentCommit);
-                # const classification = await versionClassifier.ClassifyAsync(lastRelease, commitSet);
-
-                # const { isTagged } = lastRelease;
-                # const { major, minor, patch, increment, type, changed } = classification;
-
-                # // At this point all necessary data has been pulled from the database, create
-                # // version information to be used by the formatters
-                # let versionInfo = new VersionInformation(major, minor, patch, increment, type, commitSet.commits, changed, isTagged);
-
-                # // Group all the authors together, count the number of commits per author
-                # const allAuthors = versionInfo.commits
-                #     .reduce((acc: any, commit) => {
-                #     const key = `${commit.author} <${commit.authorEmail}>`;
-                #     acc[key] = acc[key] || { n: commit.author, e: commit.authorEmail, c: 0 };
-                #     acc[key].c++;
-                #     return acc;
-                #     }, {});
-
-                # const authors = Object.values(allAuthors)
-                #     .map((u: any) => new UserInfo(u.n, u.e, u.c))
-                #     .sort((a: UserInfo, b: UserInfo) => b.commits - a.commits);
-
-                # return new VersionResult(
-                #     versionInfo.major,
-                #     versionInfo.minor,
-                #     versionInfo.patch,
-                #     versionInfo.increment,
-                #     versionInfo.type,
-                #     versionFormatter.Format(versionInfo),
-                #     tagFormatter.Format(versionInfo),
-                #     versionInfo.changed,
-                #     versionInfo.isTagged,
-                #     userFormatter.Format('author', authors),
-                #     currentCommit,
-                #     lastRelease.hash,
-                #     `${lastRelease.major}.${lastRelease.minor}.${lastRelease.patch}`,
-                #     debugManager.getDebugOutput()
-                # );
             } End {
-                $Output | Add-Member -Name "Version" -MemberType NoteProperty -Value $FormattedVersion;
-                $Output | Add-Member -Name "Major" -MemberType NoteProperty -Value $Major;
-                $Output | Add-Member -Name "Minor" -MemberType NoteProperty -Value $Minor;
-                $Output | Add-Member -Name "Patch" -MemberType NoteProperty -Value $Patch;
-                $Output | Add-Member -Name "Increment" -MemberType NoteProperty -Value $Increment;
-                $Output | Add-Member -Name "VersionType" -MemberType NoteProperty -Value (Get-VersionType -Type $VersionType).ToLower();
-                $Output | Add-Member -Name "Changed" -MemberType NoteProperty -Value $Changed;
-                $Output | Add-Member -Name "IsTagged" -MemberType NoteProperty -Value $IsTagged;
-                $Output | Add-Member -Name "VersionTag" -MemberType NoteProperty -Value $VersionTag;
-                $Output | Add-Member -Name "Authors" -MemberType NoteProperty -Value $Authors;
-                $Output | Add-Member -Name "PreviousCommit" -MemberType NoteProperty -Value $PreviousCommit;
-                $Output | Add-Member -Name "PreviousVersion" -MemberType NoteProperty -Value $PreviousVersion;
-                $Output | Add-Member -Name "CurrentCommit" -MemberType NoteProperty -Value $CurrentCommit;
-                $Output | Add-Member -Name "DebugOutput" -MemberType NoteProperty -Value $DebugOutput;
+                [PSObject] $Outputs = [PSObject]::new();
+                $Outputs | Add-Member -Name "Version" -MemberType NoteProperty -Value $FormattedVersion;
+                $Outputs | Add-Member -Name "Major" -MemberType NoteProperty -Value $Major;
+                $Outputs | Add-Member -Name "Minor" -MemberType NoteProperty -Value $Minor;
+                $Outputs | Add-Member -Name "Patch" -MemberType NoteProperty -Value $Patch;
+                $Outputs | Add-Member -Name "Increment" -MemberType NoteProperty -Value $Increment;
+                $Outputs | Add-Member -Name "Changed" -MemberType NoteProperty -Value $Changed;
+                $Outputs | Add-Member -Name "VersionType" -MemberType NoteProperty -Value (Get-VersionType -Type $VersionType).ToLower();
+                $Outputs | Add-Member -Name "Changed" -MemberType NoteProperty -Value $Changed;
+                $Outputs | Add-Member -Name "IsTagged" -MemberType NoteProperty -Value $IsTagged;
+                $Outputs | Add-Member -Name "VersionTag" -MemberType NoteProperty -Value $VersionTag;
+                $Outputs | Add-Member -Name "Authors" -MemberType NoteProperty -Value $Authors;
+                $Outputs | Add-Member -Name "PreviousCommit" -MemberType NoteProperty -Value $PreviousCommit;
+                $Outputs | Add-Member -Name "PreviousVersion" -MemberType NoteProperty -Value $PreviousVersion;
+                $Outputs | Add-Member -Name "CurrentCommit" -MemberType NoteProperty -Value $CurrentCommit;
+                $Outputs | Add-Member -Name "DebugOutput" -MemberType NoteProperty -Value $DebugOutput;
+                $Output | Add-Member -Name "Outputs" -MemberType NoteProperty -Value $Outputs;
                 Write-Output -NoEnumerate -InputObject $Output;
             }
         }
 
-        # [PSCustomObject] $SemVersion = (Get-SemanticVersion -VersionFormat $VersionFormat -ChangePath @('app', 'libs', 'submodules', 'themes'));
-        [Hashtable] $SemVersion = @{ Outputs = @{ Major = 1; Minor = 0; Patch = 13; Increment = 0; Commit = 'bf64670'; VersionTag = 'v1.0.13'; Version = 'v1.0.13+bf64670' }; };
+        [PSCustomObject] $SemVersion = (Get-SemanticVersion -VersionFormat $VersionFormat -ChangePath @('app', 'libs', 'submodules', 'themes'));
+        # [PSCustomObject] $SemVersion = @{ Outputs = @{ Major = 1; Minor = 0; Patch = 13; Increment = 0; Commit = 'bf64670'; VersionTag = 'v1.0.13'; Version = 'v1.0.13+bf64670' }; };
         # Make (overwrite) version.xml
 
         Remove-Item -Force 'version.xml'
