@@ -18,7 +18,7 @@ using namespace System.Text.RegularExpressions;
 using namespace Microsoft.Automation;
 using namespace Microsoft.PowerShell.Commands;
 
-# cSpell:ignore uiaccess
+# cSpell:ignore uiaccess, idgs
 
 [CmdletBinding()]
 Param (
@@ -53,6 +53,9 @@ Begin {
     } ElseIf (-not $PSBoundParameters.ContainsKey('GitHubToken') -and $Null -eq $GitHubToken -and $Null -ne $env:GitHubToken) {
         $env:GitHubToken = $env:GitHubToken;
     }
+
+    [FileInfo[]] $PythonEnvActivatePath = @(Get-ChildItem -Path "$($PWD.Path)\*\Scripts\activate.ps1");
+    & ($PythonEnvActivatePath | Select-Object -First 1).FullName;
 } Process {
     Try {
         # Add submodules to pythonpath
@@ -156,8 +159,17 @@ Begin {
                 [string]   $PreviousVersion = [string]::Empty;
                 [string]   $CurrentCommit = [string]::Empty;
                 [string[]] $DebugOutput = @();
+                [string]   $Repository = [string]::Empty;
 
-                [string] $Repository = ($env:GITHUB_REPOSITORY ?? $PSScriptRoot);
+                If ($PSVersionTable.PSVersion.Major -ge 7) {
+                    $Repository = ($env:GITHUB_REPOSITORY ?? $PSScriptRoot);
+                } Else {
+                    If (-not ([string]::IsNullOrWhiteSpace($env:GITHUB_REPOSITORY))) {
+                        $Repository = $env:GITHUB_REPOSITORY;
+                    } Else {
+                        $Repository = $PSScriptRoot;
+                    }
+                }
 
                 if (-not $Changed) {
                     Write-Host -Object 'No changes detected for this commit';
@@ -434,9 +446,9 @@ Begin {
                     $VersionTag = (Resolve-CurrentCommit);
                     $CurrentCommit = $CurrentCommitResolver.RevParse;
                     If ($BumpEachCommit) {
-                        $Version = (Invoke-BumpAlwaysVersionClassify);
+                        $FormattedVersion = (Invoke-BumpAlwaysVersionClassify);
                     } Else {
-                        $Version = (Invoke-VersionClassify);
+                        $FormattedVersion = (Invoke-VersionClassify);
                     }
                 }
 
@@ -532,7 +544,7 @@ Begin {
         }
 
         # [PSCustomObject] $SemVersion = (Get-SemanticVersion -VersionFormat $VersionFormat -ChangePath @('app', 'libs', 'submodules', 'themes'));
-        [Hashtable] $SemVersion = @{ Outputs = @{ Major = 1; Minor = 0; Patch = 13; Increment = 0; Commit = 'bf64670'; Tag = 'v1.0.13'; Version = 'v1.0.13+bf64670' }; };
+        [Hashtable] $SemVersion = @{ Outputs = @{ Major = 1; Minor = 0; Patch = 13; Increment = 0; Commit = 'bf64670'; VersionTag = 'v1.0.13'; Version = 'v1.0.13+bf64670' }; };
         # Make (overwrite) version.xml
 
         Remove-Item -Force 'version.xml'
@@ -548,71 +560,109 @@ Begin {
                 '</version>'
             ) -join "`n");
 
-        # Setup Python
+        [bool] $SkipInstall = ($Null -ne (Get-Item -LiteralPath '.installed' -ErrorAction SilentlyContinue));
 
-        Get-ChildItem -LiteralPath $PWD -Recurse -Filter 'requirements.txt' | ForEach-Object {
-            #& pip install -r $_;
+        If (-not $SkipInstall) {
+            # Setup Python
+
+            Get-ChildItem -LiteralPath $PWD -Recurse -Filter 'requirements.txt' | ForEach-Object {
+                & pip install -r $_;
+            }
+
+            # Install Dependencies
+
+            pip install -r requirements.txt -r requirements_build.txt
+
+            # Build Actions
+
+            $ErrorActionPreference = 'Stop';
+            python distribute.py `
+                --skip-pip `
+                --product-version="$($SemVersion.Outputs.Major).$($SemVersion.Outputs.Minor).$($SemVersion.Outputs.Patch).$($SemVersion.Outputs.Increment)" `
+                --skip-build 2>&1 | Out-Host;
+
+            New-Item -Path .installed -ItemType File | Out-Null;
         }
-
-        # Install Dependencies
-
-        #pip install -r requirements.txt -r requirements_build.txt
-
-        # Build Actions
-
-        $ErrorActionPreference = 'Stop';
-        python distribute.py `
-            --skip-pip `
-            --product-version="$($SemVersion.Outputs.Major).$($SemVersion.Outputs.Minor).$($SemVersion.Outputs.Patch).$($SemVersion.Outputs.Increment)" `
-            --skip-build 2>&1 | Out-Host;
 
         # Build
         # TODO: https://github.com/Nuitka/Nuitka-Action
         Function Invoke-NuitkaAction {
             [CmdletBinding()]
             Param(
-                [Parameter(Mandatory = $False)]
+                [Parameter(Mandatory = $True,
+                    HelpMessage = 'Skips install methods')]
+                [bool]
+                $SkipInstall,
+
+                ### Tags for building Nuitka ###
+
+                [Parameter(Mandatory = $False,
+                    HelpMessage = 'Directory to run nuitka in if not top level')]
                 [ValidateNotNullOrWhiteSpace()]
                 [string]
-                $NuitkaVersion = "main",
-                [Parameter(Mandatory = $True)]
+                $WorkingDirectory = '.',
+
+                [Parameter(Mandatory = $False,
+                    HelpMessage = 'Version of nuitka to use, branches, tags work')]
+                [ValidateNotNullOrWhiteSpace()]
+                [string]
+                $NuitkaVersion = 'main',
+
+                [Parameter(Mandatory = $True,
+                    HelpMessage = 'Path to python script that is to be built.')]
                 [ValidateNotNullOrWhiteSpace()]
                 [string]
                 $ScriptName,
-                [Parameter(Mandatory = $False)]
+
+                [Parameter(Mandatory = $False,
+                    HelpMessage = 'Github personal access token of an account authorized to access the Nuitka-commercial repo')]
                 [ValidateNotNullOrWhiteSpace()]
                 [string]
-                $Mode = "app",
-                [Parameter(Mandatory = $False)]
+                $AccessToken,
+
+                [Parameter(Mandatory = $False,
+                    HelpMessage = "Mode in which to compile. Accelerated runs in your Python`ninstallation and depends on it. Standalone creates a folder`nwith an executable contained to run it. Onefile creates a`nsingle executable to deploy. App is onefile except on macOS`nwhere it's not to be used. Module makes a module, and`npackage includes also all sub-modules and sub-packages. Dll`nis currently under development and not for users yet.`nDefault is 'accelerated'.")]
+                [ValidateNotNullOrWhiteSpace()]
+                [string]
+                $Mode = 'app',
+
+                [Parameter(Mandatory = $False,
+                    HelpMessage = 'Description of the file used in version information. Windows only at this time. Defaults to binary filename.')]
                 [ValidateNotNullOrWhiteSpace()]
                 [string]
                 $FileDescription,
-                [Parameter(Mandatory = $False)]
+
+                [Parameter(Mandatory = $False,
+                    HelpMessage = "Include data files by filenames in the distribution. There are many`nallowed forms. With '--include-data-files=/path/to/file/*.txt=folder_name/some.txt' it`nwill copy a single file and complain if it's multiple. With`n'--include-data-files=/path/to/files/*.txt=folder_name/' it will put`nall matching files into that folder. For recursive copy there is a`nform with 3 values that '--include-data-files=/path/to/scan=folder_name/=**/*.txt'`nthat will preserve directory structure. Default empty.")]
                 [ValidateNotNullOrEmpty()]
                 [string[]]
                 $IncludeDataFiles,
-                [Parameter(Mandatory = $False)]
-                [ValidateNotNullOrEmpty()]
+
+                [Parameter(Mandatory = $False,
+                    HelpMessage = "Product version to use in version information. Same rules as for file version.`nDefaults to unused.")]
+                [AllowNull()]
                 [string]
-                $VersionTag
+                $ProductVersion
             )
 
             Begin {
                 $env:NUITKA_CACHE_DIR = (Join-Path -Path $PSScriptRoot -ChildPath (Join-Path -Path 'nuitka' -ChildPath 'cache'));
                 $env:PYTHON_VERSION = (((((python --version 2>&1) -split '\s+' | Select-Object -Index 1) -split '\.') | Select-Object -First 2) -join '.')
-                pip install -r (Join-Path -Path $PSScriptRoot -ChildPath 'requirements.txt') 2>&1 | Out-Host;
+                If (-not $SkipInstall) {
+                    pip install -r (Join-Path -Path $PSScriptRoot -ChildPath 'requirements.txt') 2>&1 | Out-Host;
 
-                # With commercial access token, use that repository.
-                If (-not [string]::IsNullOrWhiteSpace($env:NuitkaAccessToken)) {
-                    $RepoUrl = "git+https://$($AccessToken)@github.com/Nuitka/Nuitka-commercial.git";
-                } Else {
-                    $RepoUrl = "git+https://$@github.com/Nuitka/Nuitka.git"
-                }
+                    # With commercial access token, use that repository.
+                    If (-not [string]::IsNullOrWhiteSpace($env:NuitkaAccessToken)) {
+                        $RepoUrl = "git+https://$($AccessToken)@github.com/Nuitka/Nuitka-commercial.git";
+                    } Else {
+                        $RepoUrl = "git+https://$@github.com/Nuitka/Nuitka.git"
+                    }
 
-                pip install "$($RepoUrl)/@$($NuitkaVersion)#egg=nuitka" 2>&1 | Out-Host;
+                    pip install "$($RepoUrl)/@$($NuitkaVersion)#egg=nuitka" 2>&1 | Out-Host;
 
-                if ($IsLinux) {
-                    sudo apt-get install -y ccache 2>&1 | Out-Host;
+                    if ($IsLinux) {
+                        sudo apt-get install -y ccache 2>&1 | Out-Host;
+                    }
                 }
             } Process {
                 $env:NUITKA_WORKFLOW_INPUTS = (@{
@@ -620,7 +670,7 @@ Begin {
                         'script-name'                           = "$($ScriptName)";
                         'mode'                                  = "$($Mode)";
                         'static-libpython'                      = 'auto';
-                        'product-version'                       = "$($VersionTag -replace '^v', '')";
+                        'product-version'                       = "$($ProductVersion -replace '^v', '')";
                         'file-description'                      = "$($FileDescription)";
                         'include-data-files'                    = "$(@($IncludeDataFiles | ForEach-Object { @($_, $_) -join '=' }) -join "`n")`n";
                         'working-directory'                     = '.';
@@ -715,21 +765,28 @@ Begin {
         }
 
         [string] $Mode = '';
+
         If ($OS -eq 'macos') {
             $Mode = 'app';
         } Else {
             $Mode = 'standalone';
         }
 
-        Invoke-NuitkaAction -NuitkaVersion 'main' -ScriptName 'app/__main__.py' -Mode $Mode -FileDescription 'RimSort' -IncludeDataFiles @('version.xml=version.xml') -VersionTag $SemVersion.Outputs.VersionTag;
+        Invoke-NuitkaAction -SkipInstall $SkipInstall -NuitkaVersion 'main' -ScriptName 'app/__main__.py' -Mode $Mode -FileDescription 'RimSort' -IncludeDataFiles @('version.xml') -ProductVersion $SemVersion.Outputs.VersionTag;
 
         # Set FILENAME
         [string] $FILENAME = $Platform;
         $FILENAME += $Arch;
         $env:FILENAME = "$FILENAME";
 
+        [string] $OutExec = "RimSort";
+
+        If ($IsWIndows) {
+            $OutExec = "$($OutExec).exe";
+        }
+
         # Find Executable
-        [FileInfo] $Executable = $(Get-ChildItem -LiteralPath . -Recurse -File -Filter $Executable | Select-Object -First 1);
+        [FileInfo] $Executable = (Get-ChildItem -LiteralPath . -Recurse -File -Filter $OutExec | Select-Object -First 1);
         $env:EXECUTABLE = "$Executable";
         Write-Host -Object "Executable found at $Executable";
 
@@ -759,7 +816,7 @@ Begin {
         # Rename new build
         Push-Location -LiteralPath build;
         Move-Item -LiteralPath $env:BUILD_OUTPUT -Destination "output";
-        tar -cvf "$($env:FILENAME).tar" "output" 2>&1;
+        tar -cvf "$($env:FILENAME).tar" "output" 2>&1 | Out-Host;
         Remove-Item -Recurse -Force -LiteralPath "output";
         Pop-Location;
 
