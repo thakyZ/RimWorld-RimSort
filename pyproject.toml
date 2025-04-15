@@ -1,4 +1,23 @@
 #cSpell: ignore unimported, subclassing
+[project]
+name = "RimSort"
+version = "1.0.0.0"
+description = ""
+authors = [
+    {name = "Sébastien Eustace", email = "sebastien@eustace.io"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+]
+
+[tool.poetry]
+name = "RimSort"
+version = "1.0.0.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 disallow_any_generics = true
