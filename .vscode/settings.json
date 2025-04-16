@@ -69,7 +69,11 @@
     "virtualenv",
     "webapi",
     "nuitka",
-    "zetrith"
+    "zetrith",
+    "qlabels",
+    "repolish",
+    "repolishing",
+    "unhighlighting"
   ],
   "markdownlint.config": {
     "no-inline-html": {
