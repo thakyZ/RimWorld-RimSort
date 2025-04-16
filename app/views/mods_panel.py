@@ -716,7 +716,7 @@ class ModListWidget(QListWidget):
         self.deletion_sub_menu = ModDeletionMenu(
             self._get_selected_metadata,
             self.uuids,
-        )  # TDOD: should we enable items conditionally? For now use all
+        )  # TODO: should we enable items conditionally? For now use all
         logger.debug("Finished ModListW`idget initialization")
 
     def item(self, row: int) -> CustomListWidgetItem:
@@ -1927,7 +1927,7 @@ class ModListWidget(QListWidget):
             ):
                 # Check dependencies (and replacements for dependencies)
                 # Note: dependency replacements are NOT assumed to be subject
-                # to the same load order rules as the orignal mods!
+                # to the same load order rules as the original mods!
                 mod_errors["missing_dependencies"] = {
                     dep
                     for dep in mod_data.get("dependencies", [])
