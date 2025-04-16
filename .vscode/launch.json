@@ -2,6 +2,13 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug: build_binary.ps1",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${workspaceFolder}/build_binary.ps1",
+      "cwd": "${cwd}"
+    },
+    {
       "name": "RimSort",
       "type": "debugpy",
       "request": "launch",
