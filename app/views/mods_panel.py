@@ -2377,6 +2377,23 @@ class ModListWidget(QListWidget):
                         f"Failed to convert mod! Destination already exists: {renamed_mod_path}"
                     )
 
+    def update_mod_packageid(self, path: str) -> None:
+        about_file = Path(path, "About", "About.xml")
+        if about_file.exists():
+            try:
+                root_element = etree.parse(about_file, parser=etree.XMLParser(recover=True))
+                package_id = root_element.find("packageId")
+                if package_id is not None and package_id.text is not None:
+                    suffix = ".local"
+                    if re.match(r'[A-Z]', package_id.text) is not None:
+                        suffix = ".Local"
+                    package_id.text = f"{package_id.text}{suffix}"
+                root_element.write(about_file)
+            except Exception as e:
+                stacktrace = format_exc()
+                logger.error(f"Failed to convert modify the about file for mod {path} - {e}")
+                logger.error(stacktrace)
+
     def make_local_copy_of_steam_mod(
             self,
             steam_mod_paths: list[str],
@@ -2422,6 +2439,7 @@ class ModListWidget(QListWidget):
                         )
                     try:
                         copytree(path, renamed_mod_path)
+                        self.update_mod_packageid(renamed_mod_path)
                     except FileExistsError:
                         for root, dirs, files in os.walk(path):
                             dest_dir = root.replace(path, renamed_mod_path)
@@ -2443,21 +2461,6 @@ class ModListWidget(QListWidget):
                 except Exception as e:
                     stacktrace = format_exc()
                     logger.error(f"Failed to convert mod: {path} - {e}")
-                    logger.error(stacktrace)
-            about_file = Path(renamed_mod_path, "About", "About.xml")
-            if about_file.exists():
-                try:
-                    root_element = etree.parse(about_file, parser=etree.XMLParser(recover=True))
-                    package_id = root_element.find("/ModMetaData/packageId")
-                    if package_id is not None and package_id.text is not None:
-                        suffix = ".local"
-                        if re.match(r'[A-Z]', package_id.text) is not None:
-                            suffix = ".Local"
-                        package_id.text = f"{package_id.text}{suffix}"
-                    root_element.write(about_file)
-                except Exception as e:
-                    stacktrace = format_exc()
-                    logger.error(f"Failed to convert modify the about file for mod {path} - {e}")
                     logger.error(stacktrace)
 
     def unsubscribe_from_steam_mods(self, publishedfileids: KeysView[Any]) -> bool:
