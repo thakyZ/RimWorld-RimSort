@@ -2807,7 +2807,8 @@ class ModsPanel(QWidget):
         self.errors_summary_layout.setContentsMargins(0, 0, 0, 0)
         self.errors_summary_layout.setSpacing(2)
         # Create horizontal layout for warnings and errors
-        self.warnings_errors_layout = QHBoxLayout()
+        self.warnings_errors_layout_widget = QWidget()
+        self.warnings_errors_layout = QHBoxLayout(self.warnings_errors_layout_widget)
         self.warnings_errors_layout.setSpacing(2)
         self.warnings_icon: QLabel = QLabel()
         self.warnings_icon.setPixmap(
@@ -2855,7 +2856,7 @@ class ModsPanel(QWidget):
 
         # Add to the outer frame
         self.errors_summary_frame.setLayout(self.errors_summary_layout)
-        self.errors_summary_frame.setHidden(True)
+        self.warnings_errors_layout_widget.setVisible(False)
 
     def initialize_inactive_mods_search_widgets(self) -> None:
         """Initialize widgets for inactive mods search layout."""
@@ -3110,7 +3111,7 @@ class ModsPanel(QWidget):
             )
             # Calculate total errors and warnings and set the text and tool tip for the summary
             if total_error_text or total_warning_text or num_errors or num_warnings:
-                self.errors_summary_frame.setHidden(False)
+                self.warnings_errors_layout_widget.setVisible(True)
                 padding = " "
                 self.warnings_text.setText(f"{padding}{num_warnings} warning(s)")
                 self.errors_text.setText(f"{padding}{num_errors} error(s)")
@@ -3121,7 +3122,7 @@ class ModsPanel(QWidget):
                     total_warning_text.lstrip() if total_warning_text else ""
                 )
             else:  # Hide the summary if there are no errors or warnings
-                self.errors_summary_frame.setHidden(True)
+                self.warnings_errors_layout_widget.setVisible(False)
                 self.warnings_text.setText("0 warnings")
                 self.errors_text.setText("0 errors")
                 self.errors_icon.setToolTip("")
