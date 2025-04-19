@@ -1806,14 +1806,24 @@ class MainContent(QObject):
 
     @Slot()
     def _on_do_upload_rimworld_log(self) -> None:
-        player_log_path = (
-            Path(
-                self.settings_controller.settings.instances[
-                    self.settings_controller.settings.current_instance
-                ].config_folder
-            ).parent
-            / "Player.log"
+        current_instance = self.settings_controller.settings.current_instance
+        run_args = getattr(
+            self.settings_controller.settings.instances[current_instance],
+            "run_args",
+            None,
         )
+        player_log_path = None
+        if run_args is not None:
+            for i, arg in enumerate(run_args):
+                if arg == '-logfile':
+                    player_log_path = Path(run_args[i + 1]).parent
+        if player_log_path is None:
+            player_log_path = (
+                Path(
+                    self.settings_controller.settings.instances[current_instance].config_folder
+                ).parent
+                / "Player.log"
+            )
 
         self._upload_log(player_log_path)
 
