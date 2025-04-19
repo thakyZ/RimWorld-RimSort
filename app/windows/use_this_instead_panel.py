@@ -45,7 +45,7 @@ class UseThisInsteadPanel(BaseModsPanel):
         def __subscribe_cb(_: UseThisInsteadPanel) -> None:
             dialogue.show_information(
                 "Use This Instead",
-                "Succesfully subscribed to replacement mods",
+                "Successfully subscribed to replacement mods",
             )
 
         self.editor_update_mods_button = QPushButton("Subscribe replacements")
@@ -71,7 +71,7 @@ class UseThisInsteadPanel(BaseModsPanel):
         def __unsubscribe_cb(_: UseThisInsteadPanel) -> None:
             dialogue.show_information(
                 "Use This Instead",
-                "Succesfully unsubscribed to original mods",
+                "Successfully unsubscribed to original mods",
             )
 
         unsub_action = QAction("Unsubscribe outdated", self)
