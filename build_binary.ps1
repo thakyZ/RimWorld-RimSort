@@ -725,8 +725,8 @@ Begin {
             }
 
             [PSObject] $Output = [PSObject]::new();
-            [ScriptBlock] $MajorPattern = (Get-ParsedPattern -Pattern $Config.MajorPattern -Flags $Config.MajorFlags -Config $Config).ScriptBlock;
-            [ScriptBlock] $MinorPattern = (Get-ParsedPattern -Pattern $Config.MinorPattern -Flags $Config.MinorFlags -Config $Config).ScriptBlock;
+            [ScriptBlock] $MajorPattern = (Get-ParsedPattern -Pattern $Config.MajorPattern -Flags $Config.MajorRegExpFlags -Config $Config).ScriptBlock;
+            [ScriptBlock] $MinorPattern = (Get-ParsedPattern -Pattern $Config.MinorPattern -Flags $Config.MinorRegExpFlags -Config $Config).ScriptBlock;
             [ScriptBlock] $PatchPattern = (Get-ParsedPattern -Pattern $Config.BumpEachCommitPatchPattern -Flags '' -Config $Config).ScriptBlock;
             [bool] $EnablePrereleaseMode = $EnablePrereleaseMode;
             [string] $Type = 'None';
@@ -1024,10 +1024,8 @@ Begin {
         [string] $NamespaceSeperator = '-';
         [PSObject] $Config = [PSObject]::new();
         $Config | Add-Member -Name "MajorPattern" -MemberType NoteProperty -Value $MajorPattern;
-        $Config | Add-Member -Name "MajorFlags" -MemberType NoteProperty -Value $MajorFlags;
         $Config | Add-Member -Name "MajorRegExpFlags" -MemberType NoteProperty -Value $MajorRegExpFlags;
         $Config | Add-Member -Name "MinorPattern" -MemberType NoteProperty -Value $MinorPattern;
-        $Config | Add-Member -Name "MinorFlags" -MemberType NoteProperty -Value $MinorFlags;
         $Config | Add-Member -Name "MinorRegExpFlags" -MemberType NoteProperty -Value $MinorRegExpFlags;
         $Config | Add-Member -Name "ChangePath" -MemberType NoteProperty -Value $ChangePath;
         $Config | Add-Member -Name "Namespace" -MemberType NoteProperty -Value $Namespace;
