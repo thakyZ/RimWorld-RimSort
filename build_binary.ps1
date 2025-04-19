@@ -128,6 +128,10 @@ Begin {
         [bool]
         $BumpEachCommit = $False,
         [Parameter(Mandatory = $False,
+          HelpMessage = 'If true, the body of commits will also be searched for major/minor patterns to determine the version type.')]
+        [bool]
+        $SearchCommitBody = $False,
+        [Parameter(Mandatory = $False,
           HelpMessage = 'If BumpEachCommit is also set to true, setting this value will cause the version to increment only if the pattern specified is matched.')]
         [AllowEmptyString()]
         [AllowNull()]
@@ -259,25 +263,33 @@ Begin {
               }
             }
           } Process {
-            [string] $CurrentTag = (git tag --points-at "$($CurrentCommit)" "$($TagFormat)");
+            [string] $CurrentTag = (git 'tag' '--points-at' "$($CurrentCommit)" "$($TagFormat)" 2>&1);
             $IsTagged = (-not [string]::IsNullOrWhiteSpace($CurrentTag));
+
             If ($IsTagged) {
               $CurrentTag.Trim();
             }
+
             [int] $CurrentMajor = $Null;
             [int] $CurrentMinor = $Null;
             [int] $CurrentPatch = $Null;
-            [Version] $ParsedTag = $Null;
-            [string] $TrimmedTag = ($CurrentTag -replace "^$([Regex]::Escape($Config.TagPrefix))", '' -replace "$($NamespaceSeperator)$([Regex]::Escape($Config.Namespace))$", '');
-            If ([Version]::TryParse($TrimmedTag, [Ref] $ParsedTag)) {
+            [Version] $ParsedCurrentTag = $Null;
+            [string] $TrimmedCurrentTag = ($CurrentTag -replace "^$([Regex]::Escape($Config.TagPrefix))", '' -replace "$($NamespaceSeperator)$([Regex]::Escape($Config.Namespace))$", '');
+
+            If ([Version]::TryParse($TrimmedCurrentTag, [Ref] $ParsedCurrentTag)) {
               $CurrentMajor = $ParsedTag.Major;
               $CurrentMinor = $ParsedTag.Minor;
               $CurrentPatch = $ParsedTag.Build;
             }
+
             [int] $TagsCount = 0;
             [string] $Tag = [string]::Empty;
+            [string] $Command = $Null;
+            [string[]] $Tags = @();
+
             Try {
               [string] $RefPrefixPattern = 'refs/tags/';
+
               If ($Config.UseBranches) {
                 $RefPrefixPattern = 'refs/heads/';
               }
@@ -285,15 +297,15 @@ Begin {
               If (-not [string]::IsNullOrWhiteSpace($CurrentTag)) {
                 # If we already have the current branch tagged, we are checking for the previous one
                 # so that we will have an accurate increment (assuming the new tag is the expected one)
-                [string] $Command = (git 'for-each-ref' '--sort=-v:*refname' '--format=%(refname:short)' "--merged=$($CurrentCommit)" "$($RefPrefixPattern)$($TagFormat)").Trim();
-                [string[]] $Tags = @($Command -split "`n| ");
-                $TagsCount = $Tags.length;
-                $Tag = $Tags | Where-Object { $_ -match $TagPattern -and $_ -ne $CurrentTag } | Select-Object -First;
-              } else {
-                [string] $Command = (git 'for-each-ref' '--sort=-v:*refname' '--format=%(refname:short)' "--merged=$($CurrentCommit)" "$($RefPrefixPattern)$($TagFormat)").Trim();
-                [string[]] $Tags = @($Command -split "`n| ");
-                $TagsCount = $Tags.length;
-                $Tag = $Tags | Where-Object { $_ -match $TagPattern } | Select-Object -First 1;
+                $Command = (git 'for-each-ref' '--sort=-v:*refname' '--format=%(refname:short)' "--merged=$($CurrentCommit)" "$($RefPrefixPattern)$($TagFormat)" 2>&1).Trim();
+                $Tags = @($Command -split "`n| ");
+                $TagsCount = $Tags.Length;
+                $Tag = ($Tags | Where-Object { $_ -match $TagFormat -and $_ -ne $CurrentTag } | Select-Object -First 1);
+              } Else {
+                $Command = (git 'for-each-ref' '--sort=-v:*refname' '--format=%(refname:short)' "--merged=$($CurrentCommit)" "$($RefPrefixPattern)$($TagFormat)" 2>&1).Trim();
+                $Tags = @($Command -split "`n| ");
+                $TagsCount = $Tags.Length;
+                $Tag = ($Tags | Where-Object { $_ -match $TagFormat } | Select-Object -First 1);
               }
 
               If ([string]::IsNullOrWhiteSpace($Tag)) {
@@ -302,11 +314,14 @@ Begin {
 
               $Tag = $Tag.Trim();
             } Catch {
+              Write-Debug -Message $_;
               $Tag = [string]::Empty;
             }
 
+            [Version] $ParsedTag = $Null;
+
             If ([string]::IsNullOrWhiteSpace($Tag)) {
-              If ([string]::IsNullOrWhiteSpace("$(git remote 2>&1)")) {
+              If ([string]::IsNullOrWhiteSpace("$(git 'remote' 2>&1)")) {
 
                 # Since there is no remote, we assume that there are no other tags to pull. In
                 # practice this isn't likely to happen, but it keeps the test output from being
@@ -320,22 +335,26 @@ Begin {
               }
 
               $TrimmedTag = ($Tag -replace "^$([Regex]::Escape($Config.TagPrefix))", '' -replace "$($NamespaceSeperator)$([Regex]::Escape($Config.Namespace))$", '');
-              [Version] $ParsedTag = $Null;
+              $ParsedTag = $Null;
+
               If ([Version]::TryParse($TrimmedTag, [Ref] $ParsedTag)) {
                 $Major = $ParsedTag.Major;
                 $Minor = $ParsedTag.Minor;
                 $Patch = $ParsedTag.Build;
               }
+
               $Root = '';
             } Else {
               $TrimmedTag = ($Tag -replace "^$([Regex]::Escape($Config.TagPrefix))", '' -replace "$($NamespaceSeperator)$([Regex]::Escape($Config.Namespace))$", '');
-              [Version] $ParsedTag = $Null;
+              $ParsedTag = $Null;
+
               If ([Version]::TryParse($TrimmedTag, [Ref] $ParsedTag)) {
                 $Major = $ParsedTag.Major;
                 $Minor = $ParsedTag.Minor;
                 $Patch = $ParsedTag.Build;
               }
-              $Root = (git 'merge-base' "$Tag" "$CurrentCommit");
+
+              $Root = (git 'merge-base' "$($Tag)" "$($CurrentCommit)" 2>&1);
             }
           } End {
             $Output | Add-Member -Name 'Major' -MemberType NoteProperty -Value $Major;
@@ -497,8 +516,8 @@ Begin {
                     $ParsedFlags = $Flags;
                   }
 
-                  [Regex] $Regex = [Regex]::new($Pattern.Substring(1, $RegexEnd), $ParsedFlags);
-                  If ($Config.SearchBody) {
+                  [Regex] $script:Regex = [Regex]::new($Pattern.Substring(1, $RegexEnd), $ParsedFlags);
+                  If ($Config.SearchCommitBody) {
                     $ScriptBlock = {
                       Param(
                         # Specifies a PSObject containing commit information.
@@ -508,7 +527,7 @@ Begin {
                         $Commit
                       )
 
-                      Return $Commit.Subject -match $Regex -or $Commit.Body -match $Regex;
+                      Return $Commit.Subject -match $script:Regex -or $Commit.Body -match $script:Regex;
                     }
                   } Else {
                     $ScriptBlock = {
@@ -520,11 +539,12 @@ Begin {
                         $Commit
                       )
 
-                      Return $Commit.Subject -match $Regex;
+                      Return $Commit.Subject -match $script:Regex;
                     }
                   }
                 } Else {
-                  If ($Config.SearchBody) {
+                  [string] $script:Pattern = $Pattern
+                  If ($Config.SearchCommitBody) {
                     $ScriptBlock = {
                       Param(
                         # Specifies a PSObject containing commit information.
@@ -534,7 +554,7 @@ Begin {
                         $Commit
                       )
 
-                      Return $Commit.Subject -match $Pattern -or $Commit.Body -match $Pattern;
+                      Return $Commit.Subject -match $script:Pattern -or $Commit.Body -match $script:Pattern;
                     }
                   } Else {
                     $ScriptBlock = {
@@ -546,7 +566,7 @@ Begin {
                         $Commit
                       )
 
-                      Return $Commit.Subject -match $Pattern;
+                      Return $Commit.Subject -match $script:Pattern;
                     }
                   }
                 }
@@ -917,7 +937,7 @@ Begin {
             [Parameter(Mandatory = $True,
                        ParameterSetName = 'Version',
                        HelpMessage = 'A PSObject determining the version info to use.')]
-            [Hashtable[]]
+            [PSObject[]]
             $List,
             # Specifies a PSObject that determines the config of the commands.
             [Parameter(Mandatory = $True,
@@ -931,8 +951,8 @@ Begin {
           } Process {
             If ($Config.UserFormatType -eq 'json') {
               $Output = ($List | ForEach-Object { @{
-                name=$_.Name;
-                email=$_.Email
+                name = $_.Name;
+                email = $_.Email
               } } | ConvertTo-Json -AsArray -Depth 100);
             } ElseIf ($Config.UserFormatType -eq 'csv') {
               $Output = (@($List | ForEach-Object { "$($_.Name) <$($_.Email)>"}) -join ', ');
@@ -1036,6 +1056,8 @@ Begin {
         $Config | Add-Member -Name "UserFormatType" -MemberType NoteProperty -Value $UserFormatType;
         $Config | Add-Member -Name "EnablePrereleaseMode" -MemberType NoteProperty -Value $EnablePrereleaseMode;
         $Config | Add-Member -Name "VersionFromBranch" -MemberType NoteProperty -Value $VersionFromBranch;
+        $Config | Add-Member -Name "UseBranches" -MemberType NoteProperty -Value $False;
+        $Config | Add-Member -Name "SearchCommitBody" -MemberType NoteProperty -Value $SearchCommitBody;
 
         [string] $CurrentCommit = (Resolve-CurrentCommit);
 
@@ -1068,20 +1090,21 @@ Begin {
           $IsTagged = $LastRelease.IsTagged;
           $PreviousCommit = $LastRelease.Hash;
           $PreviousVersion = "$($LastRelease.Major).$($LastRelease.Minor).$($LastRelease.Patch)";
-          [Hashtable] $AllAuthors = [ordered]@{};
+          [PSObject[]] $AllAuthors = @();
           ForEach ($Commit in $CommitsSet.Commits) {
             [string] $Key = "$($Commit.Author) <$($Commit.AuthorEmail)>";
-            If (-not $AllAuthors.ContainsKey($Key)) {
-              $AllAuthors[$Key] = [ordered]@{
-                Name    = $Commit.Author;
-                Email   = $Commit.AuthorEmail;
-                Commits = 0
-              };
+            If ($Null -eq ($AllAuthors | Where-Object { $_.FullName -eq $Key })) {
+              [PSObject] $Author = [PSObject]::new();
+              $Author | Add-Member -MemberType NoteProperty -Name 'FullName' -Value $Key;
+              $Author | Add-Member -MemberType NoteProperty -Name 'Name' -Value $Commit.Author;
+              $Author | Add-Member -MemberType NoteProperty -Name 'Email' -Value $Commit.AuthorEmail;
+              $Author | Add-Member -MemberType NoteProperty -Name 'Commits' -Value 0;
+              $AllAuthors += $Author;
             } Else {
-              $AllAuthors[$Key].Commits++
+              ($AllAuthors | Where-Object { $_.FullName -eq $Key }).Commits++
             }
           }
-          [Hashtable[]] $AuthorsList = @($AllAuthors.Values | Sort-Object -Property Commits -Descending);
+          [PSObject[]] $AuthorsList = @($AllAuthors | Sort-Object -Property Commits -Descending);
           [string] $Authors = (Format-Users -List $AuthorsList -Config $Config);
         }
       } End {
