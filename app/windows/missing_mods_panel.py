@@ -18,6 +18,7 @@ class MissingModsPrompt(BaseModsPanel):
     """
 
     steamcmd_downloader_signal = Signal(list)
+    steamworks_subscription_signal = Signal(list)
 
     def __init__(
         self,
