@@ -106,7 +106,7 @@ class MetadataController(QObject):
 
         return mod_data, entry
 
-    @Slot(str)
+    @Slot(Path)
     def delete_mod(self, *path: Path) -> None:
         """Delete a mod from the metadata, and aux metadata
         Does not remove the mod from disk.
