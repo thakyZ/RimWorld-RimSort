@@ -6,6 +6,12 @@
   "cSpell.ignorePaths": [
     "**test**"
   ],
+  "mypy-type-checker.ignorePatterns": [
+    "**/site-packages/**/*.py",
+    ".vscode/*.py",
+    ".venv",
+    "submodules"
+  ],
   "cSpell.words": [
     "-rmqq",
     "apikey",
