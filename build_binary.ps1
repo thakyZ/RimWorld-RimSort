@@ -280,7 +280,7 @@ Begin {
         $Config | Add-Member -MemberType NoteProperty -Name 'BumpEachCommit'             -Value ($BumpEachCommit.IsPresent)             -Debug:$script:Debug -Verbose:$script:Verbose;
         $Config | Add-Member -MemberType NoteProperty -Name 'TagPrefix'                  -Value $TagPrefix                              -Debug:$script:Debug -Verbose:$script:Verbose;
         $Config | Add-Member -MemberType NoteProperty -Name 'VersionFormat'              -Value $VersionFormat                          -Debug:$script:Debug -Verbose:$script:Verbose;
-        $Config | Add-Member -MemberType NoteProperty -Name 'BumpEachCommitPatchPattern' -Value ($BumpEachCommitPatchPattern.IsPresent) -Debug:$script:Debug -Verbose:$script:Verbose;
+        $Config | Add-Member -MemberType NoteProperty -Name 'BumpEachCommitPatchPattern' -Value $BumpEachCommitPatchPattern             -Debug:$script:Debug -Verbose:$script:Verbose;
         $Config | Add-Member -MemberType NoteProperty -Name 'UserFormatType'             -Value $UserFormatType                         -Debug:$script:Debug -Verbose:$script:Verbose;
         $Config | Add-Member -MemberType NoteProperty -Name 'EnablePrereleaseMode'       -Value (-not $DisablePrereleaseMode.IsPresent) -Debug:$script:Debug -Verbose:$script:Verbose;
         $Config | Add-Member -MemberType NoteProperty -Name 'VersionFromBranch'          -Value ($VersionFromBranch.IsPresent)          -Debug:$script:Debug -Verbose:$script:Verbose;
