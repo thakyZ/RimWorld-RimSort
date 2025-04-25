@@ -990,13 +990,14 @@ class MainContent(QObject):
             )
 
     def __do_download_extract_release_to_tempdir(self, url: str) -> None:
-        with ZipFile(BytesIO(requests_get(url).content)) as zipobj:
+        with ZipFile(BytesIO(requests_get(url, timeout=10).content)) as zipobj:
             zipobj.extractall(gettempdir())
 
     def __do_get_github_release_info(self) -> dict[str, Any]:
         # Parse latest release
         raw = requests_get(
-            "https://api.github.com/repos/RimSort/RimSort/releases/latest"
+            "https://api.github.com/repos/RimSort/RimSort/releases/latest",
+            timeout=10
         )
         return raw.json()
 

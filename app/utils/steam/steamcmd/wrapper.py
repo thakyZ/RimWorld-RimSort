@@ -444,14 +444,14 @@ class SteamcmdInterface:
                 )
                 if ".zip" in self.steamcmd_url:
                     with ZipFile(
-                        BytesIO(requests.get(self.steamcmd_url).content)
+                        BytesIO(requests.get(self.steamcmd_url, timeout=10).content)
                     ) as zipobj:
                         zipobj.extractall(self.steamcmd_install_path)
                     runner.message("Installation completed")
                     installed = True
                 elif ".tar.gz" in self.steamcmd_url:
                     with (
-                        requests.get(self.steamcmd_url, stream=True) as rx,
+                        requests.get(self.steamcmd_url, stream=True, timeout=10) as rx,
                         tarfile.open(
                             fileobj=BytesIO(rx.content), mode="r:gz"
                         ) as tarobj,
