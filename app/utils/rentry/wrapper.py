@@ -213,7 +213,7 @@ class RentryImport:
             raw_url = (
                 rentry_link if rentry_link.endswith("/raw") else f"{rentry_link}/raw"
             )
-            response = requests.get(raw_url, headers=_HEADERS)  # Fetch the content from the raw URL
+            response = requests.get(raw_url, headers=_HEADERS, timeout=10)  # Fetch the content from the raw URL
 
             if response.status_code == 200:
                 # Decode the content using UTF-8

@@ -720,7 +720,7 @@ def ISteamRemoteStorage_GetPublishedFileDetails(
             count = chunk.index(publishedfileid)
             data[f"publishedfileids[{count}]"] = publishedfileid
         try:  # Make a request to the Steam Web API
-            request = requests_post(url, data=data)
+            request = requests_post(url, data=data, timeout=10)
         except Exception as e:
             logger.debug(
                 f"Unable to complete request! Are you connected to the internet? Received exception: {e.__class__.__name__}"

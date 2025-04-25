@@ -359,7 +359,7 @@ def upload_data_to_0x0_st(path: str) -> tuple[bool, str]:
     logger.info(f"Uploading data to http://0x0.st/: {path}")
     try:
         request = requests_post(
-            url="http://0x0.st/", files={"file": (path, open(path, "rb"))}
+            url="http://0x0.st/", files={"file": (path, open(path, "rb"))}, timeout=10
         )
     except requests.exceptions.ConnectionError as e:
         logger.error(f"Connection Error. Failed to upload data to http://0x0.st: {e}")
