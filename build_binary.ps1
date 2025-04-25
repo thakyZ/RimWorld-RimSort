@@ -1209,7 +1209,6 @@ Begin {
             $Major = $LastRelease.Major
             $Minor = $LastRelease.Minor
             $Patch = $LastRelease.Patch;
-            $Increment = $LastRelease.Increment;
           }
 
           $FormattedVersion = (Format-Version -Major $Major -Minor $Minor -Patch $Patch -Increment $Increment -Config $Config `
