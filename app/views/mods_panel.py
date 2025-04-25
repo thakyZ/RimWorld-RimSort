@@ -2806,9 +2806,12 @@ class ModsPanel(QWidget):
         self.errors_summary_layout = QVBoxLayout()
         self.errors_summary_layout.setContentsMargins(0, 0, 0, 0)
         self.errors_summary_layout.setSpacing(2)
+        # Create box for the warnings and errors
+        self.warnings_errors_layout_frame = QFrame()
+        self.warnings_errors_layout_frame.setObjectName("warnings_errors")
         # Create horizontal layout for warnings and errors
-        self.warnings_errors_layout_widget = QWidget()
-        self.warnings_errors_layout = QHBoxLayout(self.warnings_errors_layout_widget)
+        self.warnings_errors_layout = QHBoxLayout()
+        self.warnings_errors_layout.setContentsMargins(0, 0, 0, 0)
         self.warnings_errors_layout.setSpacing(2)
         self.warnings_icon: QLabel = QLabel()
         self.warnings_icon.setPixmap(
@@ -2835,8 +2838,10 @@ class ModsPanel(QWidget):
         self.warnings_errors_layout.addLayout(self.warnings_layout, 50)
         self.warnings_errors_layout.addLayout(self.errors_layout, 50)
 
-        # Add warnings/errors layout to main vertical layout
-        self.errors_summary_layout.addLayout(self.warnings_errors_layout)
+        # Add warnings/errors layout to the warnings/errors layout frame
+        self.warnings_errors_layout_frame.setLayout(self.warnings_errors_layout)
+        # Add warnings/errors layout frame to main vertical layout
+        self.errors_summary_layout.addWidget(self.warnings_errors_layout_frame)
 
         # Create and add Use This Instead button
         self.use_this_instead_button = QPushButton('Check "Use This Instead" Database')
@@ -2856,7 +2861,7 @@ class ModsPanel(QWidget):
 
         # Add to the outer frame
         self.errors_summary_frame.setLayout(self.errors_summary_layout)
-        self.warnings_errors_layout_widget.setVisible(False)
+        self.warnings_errors_layout_frame.setHidden(True)
 
     def initialize_inactive_mods_search_widgets(self) -> None:
         """Initialize widgets for inactive mods search layout."""
@@ -3111,7 +3116,7 @@ class ModsPanel(QWidget):
             )
             # Calculate total errors and warnings and set the text and tool tip for the summary
             if total_error_text or total_warning_text or num_errors or num_warnings:
-                self.warnings_errors_layout_widget.setVisible(True)
+                self.warnings_errors_layout_frame.setHidden(False)
                 padding = " "
                 self.warnings_text.setText(f"{padding}{num_warnings} warning(s)")
                 self.errors_text.setText(f"{padding}{num_errors} error(s)")
@@ -3122,7 +3127,7 @@ class ModsPanel(QWidget):
                     total_warning_text.lstrip() if total_warning_text else ""
                 )
             else:  # Hide the summary if there are no errors or warnings
-                self.warnings_errors_layout_widget.setVisible(False)
+                self.warnings_errors_layout_frame.setHidden(True)
                 self.warnings_text.setText("0 warnings")
                 self.errors_text.setText("0 errors")
                 self.errors_icon.setToolTip("")
