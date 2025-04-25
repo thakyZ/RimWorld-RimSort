@@ -424,7 +424,7 @@ def find_steam_rimworld(steam_folder: Path | str) -> str:
     This should be compatible cross-platform.
 
     Given a steam installation path, find and read the libraryfolders.vdf
-    and from this file retrieve the RimWorld steam isntallation path.
+    and from this file retrieve the RimWorld steam installation path.
 
     :param steam_folder: Path to steam installation
     :return: Rimworld Path if found, blank str otherwise
