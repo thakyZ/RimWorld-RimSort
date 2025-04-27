@@ -1,5 +1,6 @@
 import sys
 import traceback
+from ast import literal_eval
 from logging import WARNING, getLogger
 from math import ceil
 from multiprocessing import Pool, cpu_count
@@ -610,7 +611,7 @@ class DynamicQuery(QObject):
             # Create instances of SteamworksAppDependenciesQuery for each chunk
             queries = [
                 SteamworksAppDependenciesQuery(
-                    pfid_or_pfids=[eval(str_pfid) for str_pfid in chunk],
+                    pfid_or_pfids=[literal_eval(str_pfid) for str_pfid in chunk],
                     interval=1,
                     _libs=str((AppInfo().application_folder / "libs")),
                 )

@@ -1,3 +1,4 @@
+from ast import literal_eval
 from functools import partial
 from typing import Callable, Self, TypeVar
 
@@ -232,7 +233,7 @@ class BaseModsPanel(QWidget):
             EventBus().do_steamworks_api_call.emit(
                 [
                     steamworks_cmd,
-                    [eval(str_pfid) for str_pfid in steam_publishedfileids],
+                    [literal_eval(str_pfid) for str_pfid in steam_publishedfileids],
                 ]
             )
             show_information(

@@ -2,6 +2,7 @@ import json
 import os
 import re
 import sys
+from ast import literal_eval
 from enum import Enum
 from errno import ENOTEMPTY
 from functools import partial
@@ -2488,7 +2489,7 @@ class ModListWidget(QListWidget):
         self.steamworks_subscription_signal.emit(
             [
                 "unsubscribe",
-                [eval(str_pfid) for str_pfid in publishedfileids],
+                [literal_eval(str_pfid) for str_pfid in publishedfileids],
             ]
         )
         # TODO: Find a way to catch any exception/failure to unsubscribe and return False...
@@ -2517,7 +2518,7 @@ class ModListWidget(QListWidget):
         self.steamworks_subscription_signal.emit(
             [
                 "resubscribe",
-                [eval(str_pfid) for str_pfid in publishedfileids],
+                [literal_eval(str_pfid) for str_pfid in publishedfileids],
             ]
         )
         show_information(

@@ -1,5 +1,6 @@
 import os
 import platform
+from ast import literal_eval
 from functools import partial
 from typing import Any
 
@@ -361,7 +362,7 @@ class SteamBrowser(QWidget):
         self.steamworks_subscription_signal.emit(
             [
                 "subscribe",
-                [eval(str_pfid) for str_pfid in self.downloader_list_mods_tracking],
+                [literal_eval(str_pfid) for str_pfid in self.downloader_list_mods_tracking],
             ]
         )
 

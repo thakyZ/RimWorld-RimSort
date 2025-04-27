@@ -1,3 +1,4 @@
+from ast import literal_eval
 from functools import partial
 from typing import Any
 
@@ -142,7 +143,7 @@ class MissingModsPrompt(BaseModsPanel):
             self.steamworks_subscription_signal.emit(
                 [
                     "subscribe",
-                    [eval(str_pfid) for str_pfid in publishedfileids],
+                    [literal_eval(str_pfid) for str_pfid in publishedfileids],
                 ]
             )
 

@@ -7,6 +7,7 @@ import sys
 import time
 import traceback
 import webbrowser
+from ast import literal_eval
 from functools import partial
 from gc import collect
 from io import BytesIO
@@ -3056,7 +3057,7 @@ class MainContent(QObject):
                         [
                             "subscribe",
                             [
-                                eval(str_pfid)
+                                literal_eval(str_pfid)
                                 for str_pfid in self.db_builder.publishedfileids
                             ],
                         ]
