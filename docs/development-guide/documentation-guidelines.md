@@ -39,7 +39,7 @@ Where possible, all assets should be hosted within the repository itself and not
 
 ### Navigation Order
 
-Navigation order should be determined by importance, and by similarity between the names of the page titles. For example, `Documentation Guidelines` and `Contributer Guidelines` should be next to each other in the navigation order as they share a similar structure and word. This is for the sake of usability and aesthetics.
+Navigation order should be determined by importance, and by similarity between the names of the page titles. For example, `Documentation Guidelines` and `Contributor Guidelines` should be next to each other in the navigation order as they share a similar structure and word. This is for the sake of usability and aesthetics.
 
 ### Style
 

@@ -549,7 +549,7 @@ def test_create_listed_mod_from_path_steamcmd_mod_1() -> None:
 
 def test_create_listed_mod_from_path_fishery(tmp_path: Path) -> None:
     path = Path("tests/data/mod_examples/Local/Fishery")
-    # Copy entierty of path to temporary folder
+    # Copy entirety of path to temporary folder
     shutil.copytree(path, tmp_path / path)
 
     # Init temp git repo

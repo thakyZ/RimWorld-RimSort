@@ -531,6 +531,9 @@ class LogReader(QDialog):
                 else {}
             )
 
+            if metadata is None:
+                metadata = {}
+
             self.table_widget.setSortingEnabled(False)
             self._metadata_cache.clear()
 

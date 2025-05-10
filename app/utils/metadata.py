@@ -1605,6 +1605,41 @@ class ModParser(QRunnable):
                         )
                         # This is so that DB builder shows we do not have local metadata
                         mod_metadata.setdefault("DB_BUILDER_NO_NAME", True)
+                    elif (
+                        not pfid
+                        and data_source == "expansion"
+                        and mod_data.get("steamAppId")
+                        and RIMWORLD_DLC_METADATA.get(
+                            mod_data["steamAppId"], {}
+                        ).get("name")
+                    ):
+                        mod_metadata.setdefault("name", RIMWORLD_DLC_METADATA[mod_data["steamAppId"]]["name"])
+                    elif (
+                        not pfid
+                        and data_source == "expansion"
+                        and mod_data.get("modmetadata", {}).get('steamAppId')
+                    ):
+                        mod_metadata.setdefault("name", RIMWORLD_DLC_METADATA[mod_data["modmetadata"]["steamAppId"]]["name"])
+                    elif (
+                        not pfid
+                        and data_source == "expansion"
+                        and not mod_data.get("steamAppId")
+                        and not mod_data.get("modmetadata", {}).get("steamAppId")
+                        and uuid
+                        and len(metadata_manager.internal_local_metadata) > 0
+                        and metadata_manager.internal_local_metadata.get(uuid, {}).get("appid")
+                    ):
+                        mod_metadata.setdefault("name", RIMWORLD_DLC_METADATA[metadata_manager.internal_local_metadata[uuid]["appid"]]["name"])
+                    elif (
+                        not pfid
+                        and data_source == "expansion"
+                        and not mod_data.get("steamAppId")
+                        and not mod_data.get("modmetadata", {}).get("steamAppId")
+                        and uuid
+                        and len(metadata_manager.internal_local_metadata) > 0
+                        and metadata_manager.internal_local_metadata.get(uuid, {}).get("name")
+                    ):
+                        mod_metadata.setdefault("name", metadata_manager.internal_local_metadata[uuid]["name"])
                     else:
                         mod_metadata.setdefault("name", "Missing XML: <name>")
                     # Rename author tag appropriately to normalize it in usage and lookups

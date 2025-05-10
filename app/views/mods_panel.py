@@ -718,7 +718,7 @@ class ModListWidget(QListWidget):
             self._get_selected_metadata,
             self.uuids,
         )  # TODO: should we enable items conditionally? For now use all
-        logger.debug("Finished ModListW`idget initialization")
+        logger.debug("Finished ModListWidget initialization")
 
     def item(self, row: int) -> CustomListWidgetItem:
         """

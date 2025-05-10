@@ -1,0 +1,152 @@
+---
+$schema: https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json
+version: "0.2"
+name: Neko Boi Nick's cSpell config
+ignorePaths:
+  - submodules
+  - cspell.config.yaml
+  - cspell.json
+allowCompoundWords: true
+dictionaries:
+  - en_US
+  - en-gb
+  - companies
+  - softwareTerms
+  - misc
+  - typescript
+  - node
+  - php
+  - go
+  - python
+  - powershell
+  - html
+  - css
+  - csharp
+  - latex
+  - bash
+  - fonts
+  - filetypes
+words:
+  - ApiKey
+  - AppWorkshop
+  - brrainz # A mod developer
+  - Cascadia
+  - CreationFlags
+  - CPython
+  - DatabaseBuilder
+  - DocStrings
+  - EventBus
+  - ForceLoadAfter
+  - ForceLoadBefore
+  - GameVersion
+  - GitPython
+  - IncompatibleWith
+  - IncompatibleWithByVersion
+  - ISort
+  - joseasoler # The developer for Todds
+  - krkr # A mod developer
+  - LoadAfter
+  - LoadAfterByVersion
+  - LoadBefore
+  - LoadBeforeByVersion
+  - Ludeon
+  - ModDependencies
+  - ModDependenciesByVersion
+  - ModMetadata
+  - ModName
+  - NatSort
+  - NatSorted
+  - ncipollo
+  - NoRecurseDirs
+  - pfid
+  - pfids
+  - PlayerFaction
+  - PsUtil
+  - PublishedFileID
+  - PublishedFileIDs
+  - pysqlite
+  - Redistributables
+  - Rentry
+  - RimSort
+  - SaveDataFolder
+  - SavedScenario
+  - ScanDir
+  - ShFmt
+  - SteamApps
+  - SteamCMD
+  - SteamDB
+  - Subfolders
+  - SupportedVersions
+  - TargetVersion
+  - TimeTouched
+  - TimeUpdated
+  - Topo
+  - Todds
+  - QtWebEngine
+  - TopoSort
+  - Unpolish
+  - VirtualEnv
+  - WebAPI
+  - Nuitka
+  - Zetrith # A mod developer
+  - aoba # A mod developer
+  - QLabels
+  - QObject
+  - OnExc # Short for on execute
+  - Datas
+  - ACFAppWorkshop
+  - IncludeKVTags
+  - Unposted
+  - Repolish
+  - TopoLevels
+  - Repolishing
+  - Eustace # Name of the developer
+  - BuildID
+  - Unhighlighting
+  - PyEnv
+  - DMyPy # The MyPy daemon
+  - PyPa
+  - SteamWorks
+  - NoKey
+  - NoFilter
+  - Linq
+  - Scons
+  - MSYS2
+  - MSVC
+  - NoInclude
+  - Neko
+  - Redist # Short for redistributables
+  - Nuikta
+  - DescriptionsByVersion
+  - DescriptionByVersion
+  - PySide
+  - ExceptHook
+  - TopDown
+  - FollowLinks
+  - PackageId
+  - Universum # Name of a mod
+  - taranchuk # Name of a mod author
+  - PyTestQt
+  - QtBot
+  - DBBuilder # Short for Database Builder
+  - IPublishedFileService
+  - Sodipodi
+  - Encapsulator
+ignoreRegExpList:
+  - (?<=`)n\w+
+  - (?<=-?-)\w+(?=-\w+)? # Matches any CLI arguments.
+  - (?<=\.)icns
+  - (?<=.)ipynb(?=_checkpoints)
+  - ltex(?=\.dictionary\*)
+  - (?<=:)rtype(?=:) # Short for return type
+ignoreWords:
+  - ccache
+  - forgor # A silly wod (personal preference)
+  - incomp # Short for incompatibility
+  - unsub # Short for unsubscribe
+  - xattr
+  - signup
+  - libxcb
+  - qapp # Short for QApplication
+  - testke
+  - yayayay

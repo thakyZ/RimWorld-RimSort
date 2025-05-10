@@ -90,7 +90,7 @@ class ModDeletionMenu(QMenu):
             )
 
         show_information(
-            title="RimSort", text=f"Successfully deleted {count} seleted mods."
+            title="RimSort", text=f"Successfully deleted {count} selected mods."
         )
 
     def delete_both(self) -> None:

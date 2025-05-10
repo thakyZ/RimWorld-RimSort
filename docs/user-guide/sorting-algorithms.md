@@ -20,7 +20,7 @@ The first algorithm, `Alphabetical`, which is a more simplistic approach to prop
 The RimPy sorting algorithm follows, roughly, the steps described in [RimPy's Autosorting Wiki](https://github.com/rimpy-custom/RimPy/wiki/Autosorting).
 
 1. The mod list is sorted alphabetically (by mod name).
-2. Rules provided froma mod's `About.xml` files are compiled with externally provided metadata regarding that mod, are _forcefully_ applied (details on what this means below).
+2. Rules provided from a mod's `About.xml` files are compiled with externally provided metadata regarding that mod, are _forcefully_ applied (details on what this means below).
 
 The result is a mod list that is, for the most part, sorted alphabetically, aside from the shuffling that provided load order rules impose. Mods that need to be loaded before other mods are already loaded before (due to alphabetized sorting), or are forcefully inserted before the dependent mod.
 
@@ -44,7 +44,7 @@ Essentially _forcefully applied_ refers to how the sorting algorithm recursively
 
 > What does this algorithm guarantee?
 
-Assuming there are no conflicting load order rules, this algorithm guarantees that all load order rules are respected. This is because, as the algorithm iterates through the alphabetized list of mods and inserts them one by one, the current mod will either have dependencies that need to be forcefully injected befor it (in which case, the algorithm will do), or the mod has dependencies that already exist further up the list.
+Assuming there are no conflicting load order rules, this algorithm guarantees that all load order rules are respected. This is because, as the algorithm iterates through the alphabetized list of mods and inserts them one by one, the current mod will either have dependencies that need to be forcefully injected before it (in which case, the algorithm will do), or the mod has dependencies that already exist further up the list.
 
 ---
 
