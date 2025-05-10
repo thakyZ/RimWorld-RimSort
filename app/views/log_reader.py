@@ -23,11 +23,20 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from app.controllers.settings_controller import SettingsController
 from app.utils.event_bus import EventBus
-from app.utils.metadata import MetadataManager
+from app.utils.mod_utils import (
+    get_mod_name_from_pfid,
+    get_mod_path_from_pfid,
+)
 from app.utils.steam.steamcmd.wrapper import SteamcmdInterface
 from app.utils.steam.steamfiles.wrapper import acf_to_dict
-from app.views.dialogue import show_fatal_error, show_information, show_warning
+from app.views.dialogue import (
+    show_dialogue_conditional,
+    show_fatal_error,
+    show_information,
+    show_warning,
+)
 
 
 class LogReader(QDialog):
@@ -63,11 +72,16 @@ class LogReader(QDialog):
     COL_MOD_NAME = TableColumn.MOD_NAME
     COL_MOD_PATH = TableColumn.MOD_PATH
 
-    def __init__(self) -> None:
+    def __init__(self, settings_controller: SettingsController) -> None:
         super().__init__()
         self.setWindowTitle("Log Reader")
-        self.setMinimumSize(800, 600)
+        self.settings_controller = settings_controller
         self._metadata_cache: dict[str, dict[str, Any]] = {}
+
+        self.entries: list[dict[str, Union[str, int, None]]] = []
+
+        # Track sources for which empty ACF data warning has been logged
+        self._logged_empty_acf_sources: set[str] = set()
 
         # Setup auto-refresh timer
         self.refresh_timer = QTimer()
@@ -87,27 +101,27 @@ class LogReader(QDialog):
         # Search box
         self.search_box = QLineEdit()
         self.search_box.setPlaceholderText("Search...")
-        self.search_box.textChanged.connect(self.filter_table)
+        self.search_box.textChanged.connect(self._debounced_filter_table)
         controls_layout.addWidget(self.search_box)
 
         # Refresh button
         self.refresh_btn = QPushButton("Refresh")
-        self.refresh_btn.clicked.connect(self.load_acf_data)
+        self.refresh_btn.clicked.connect(self._on_refresh_clicked)
         controls_layout.addWidget(self.refresh_btn)
 
         # Import ACF Data button
         self.import_acf_btn = QPushButton("Import ACF Data")
-        self.import_acf_btn.clicked.connect(self.import_acf_data)
+        self.import_acf_btn.clicked.connect(self._on_import_acf_clicked)
         controls_layout.addWidget(self.import_acf_btn)
 
         # Export ACF Data button
         self.export_acf_btn = QPushButton("Export ACF Data")
-        self.export_acf_btn.clicked.connect(self.export_acf_data)
+        self.export_acf_btn.clicked.connect(self._on_export_acf_clicked)
         controls_layout.addWidget(self.export_acf_btn)
 
         # Export button
         self.export_btn = QPushButton("Export to CSV")
-        self.export_btn.clicked.connect(self.export_to_csv)
+        self.export_btn.clicked.connect(self._on_export_to_csv_clicked)
         controls_layout.addWidget(self.export_btn)
 
         main_layout.addLayout(controls_layout)
@@ -120,39 +134,174 @@ class LogReader(QDialog):
         main_layout.addWidget(self.status_bar)
         self.setLayout(main_layout)
 
-        # Context menu setup
-        self.table_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.table_widget.customContextMenuRequested.connect(self.show_context_menu)
-        self.load_acf_data()
+        # Remove immediate load; rely on timer to trigger after 15 seconds
+        # Initialize last modification times for ACF files
+        self._last_steamcmd_acf_mtime: float | None = None
+        self._last_steam_acf_mtime: float | None = None
+
+        # Start the refresh timer to trigger load_acf_data after 15 seconds
+        self.refresh_timer.start()
+
+    def _debounced_filter_table(self) -> None:
+        """Debounce filter_table calls to improve performance on rapid input."""
+        if hasattr(self, "_filter_timer") and self._filter_timer.isActive():
+            self._filter_timer.stop()
+        else:
+            self._filter_timer: QTimer = QTimer()
+            self._filter_timer.setSingleShot(True)
+            self._filter_timer.timeout.connect(self.filter_table)
+        self._filter_timer.start(20)
+
+    def _set_buttons_enabled(self, enabled: bool) -> None:
+        """Enable or disable buttons during long operations."""
+        self.refresh_btn.setEnabled(enabled)
+        self.import_acf_btn.setEnabled(enabled)
+        self.export_acf_btn.setEnabled(enabled)
+        self.export_btn.setEnabled(enabled)
+
+    def _on_refresh_clicked(self) -> None:
+        self._set_buttons_enabled(False)
+        try:
+            self.load_acf_data()
+        finally:
+            self._set_buttons_enabled(True)
+
+    def _on_import_acf_clicked(self) -> None:
+        self._set_buttons_enabled(False)
+        try:
+            self.import_acf_data()
+        finally:
+            self._set_buttons_enabled(True)
+
+    def _on_export_acf_clicked(self) -> None:
+        self._set_buttons_enabled(False)
+        try:
+            self.export_acf_data()
+        finally:
+            self._set_buttons_enabled(True)
+
+    def _on_export_to_csv_clicked(self) -> None:
+        self._set_buttons_enabled(False)
+        try:
+            self.export_to_csv()
+        finally:
+            self._set_buttons_enabled(True)
 
     def load_acf_data(self) -> None:
         """
-        Load workshop item data from SteamCMD ACF file.
+        Load workshop item data from SteamCMD and Steam ACF files, then populate the table.
 
         Raises:
-            RuntimeError: If SteamCMD interface is not initialized or data format is invalid.
-            FileNotFoundError: If the ACF file does not exist.
+            RuntimeError: If neither ACF file can be loaded or data format is invalid.
+            FileNotFoundError: If the ACF files do not exist.
             Exception: For other errors during loading or parsing.
         """
         self.status_bar.showMessage("Loading ACF data...")
-        try:
-            steamcmd = SteamcmdInterface.instance()
-            if not steamcmd or not hasattr(steamcmd, "steamcmd_appworkshop_acf_path"):
-                raise RuntimeError("SteamCMD interface not properly initialized")
+        self._set_buttons_enabled(False)
 
-            acf_path = Path(steamcmd.steamcmd_appworkshop_acf_path)
-            if not acf_path.exists():
-                raise FileNotFoundError(
-                    f"ACF file not found at: {acf_path}\n"
-                    f"Ensure SteamCMD is properly installed and configured"
+        try:
+            # Check modification times of ACF files to avoid unnecessary reloads
+            steamcmd = SteamcmdInterface.instance()
+            steamcmd_acf_path = (
+                Path(steamcmd.steamcmd_appworkshop_acf_path)
+                if steamcmd and hasattr(steamcmd, "steamcmd_appworkshop_acf_path")
+                else None
+            )
+            current_instance = self.settings_controller.settings.current_instance
+            workshop_acf_path = (
+                Path(
+                    self.settings_controller.settings.instances[
+                        current_instance
+                    ].workshop_folder
+                ).parent.parent
+                / "appworkshop_294100.acf"
+            )
+
+            steamcmd_acf_mtime = (
+                steamcmd_acf_path.stat().st_mtime
+                if steamcmd_acf_path and steamcmd_acf_path.exists()
+                else None
+            )
+            steam_acf_mtime = (
+                workshop_acf_path.stat().st_mtime
+                if workshop_acf_path.exists()
+                else None
+            )
+
+            # If modification times unchanged, skip reload
+            if (
+                steamcmd_acf_mtime == self._last_steamcmd_acf_mtime
+                and steam_acf_mtime == self._last_steam_acf_mtime
+            ):
+                count = 0
+                if hasattr(self, "entries") and isinstance(self.entries, list):
+                    count = len(self.entries)
+                self.status_bar.showMessage(
+                    f"Loaded {count} items | Last updated: {datetime.now().strftime('%H:%M:%S')}"
+                )
+                return
+
+            # Update stored modification times
+            self._last_steamcmd_acf_mtime = steamcmd_acf_mtime
+            self._last_steam_acf_mtime = steam_acf_mtime
+
+            combined_acf_data: dict[str, Any] = {}
+
+            # Load SteamCMD ACF data
+            steamcmd_acf_data = {}
+            if steamcmd_acf_path and steamcmd_acf_path.exists():
+                try:
+                    steamcmd_acf_data = acf_to_dict(str(steamcmd_acf_path))
+                except Exception as e:
+                    logger.error(
+                        f"Failed to parse ACF file at {steamcmd_acf_path}: {str(e)}"
+                    )
+            if steamcmd_acf_path is not None:
+                self._log_acf_load_result(
+                    "SteamCMD", steamcmd_acf_path, steamcmd_acf_data
+                )
+            else:
+                logger.warning(
+                    "SteamCMD ACF path is None, skipping log_acf_load_result call"
                 )
 
-            try:
-                acf_data = acf_to_dict(str(acf_path))
-            except Exception as e:
-                raise RuntimeError(f"Failed to parse ACF file: {str(e)}") from e
+            # Load Steam ACF data
+            steam_acf_data = {}
+            if workshop_acf_path.exists():
+                try:
+                    steam_acf_data = acf_to_dict(str(workshop_acf_path))
+                except Exception as e:
+                    logger.error(
+                        f"Failed to parse ACF file at {workshop_acf_path}: {str(e)}"
+                    )
+            if workshop_acf_path is not None:
+                self._log_acf_load_result("Steam", workshop_acf_path, steam_acf_data)
+            else:
+                logger.warning(
+                    "Steam ACF path is None, skipping log_acf_load_result call"
+                )
 
-            workshop_items = acf_data.get("AppWorkshop", {}).get(
+            # Merge AppWorkshop data carefully to avoid overwriting
+            combined_acf_data = {}
+            for source_data in (steamcmd_acf_data, steam_acf_data):
+                for key, value in source_data.items():
+                    if key == "AppWorkshop" and key in combined_acf_data:
+                        # Merge WorkshopItemsInstalled dictionaries
+                        existing_items = combined_acf_data[key].get(
+                            "WorkshopItemsInstalled", {}
+                        )
+                        new_items = value.get("WorkshopItemsInstalled", {})
+                        merged_items = {**existing_items, **new_items}
+                        combined_acf_data[key]["WorkshopItemsInstalled"] = merged_items
+                    else:
+                        combined_acf_data[key] = value
+
+            if not combined_acf_data:
+                raise RuntimeError(
+                    "Failed to load any ACF data from SteamCMD or Steam paths"
+                )
+
+            workshop_items = combined_acf_data.get("AppWorkshop", {}).get(
                 "WorkshopItemsInstalled", {}
             )
             if not isinstance(workshop_items, dict):
@@ -165,9 +314,10 @@ class LogReader(QDialog):
                 if not isinstance(item, dict):
                     continue
 
+                pfid_str = str(pfid)
                 entries.append(
                     {
-                        "published_file_id": str(pfid),
+                        "published_file_id": pfid_str,
                         "type": "workshop",
                         "path": str(item.get("manifest", "")),
                         "timeupdated": item.get("timeupdated"),
@@ -175,21 +325,36 @@ class LogReader(QDialog):
                 )
 
                 if "timeupdated" in item:
-                    self.timeupdated_data[str(pfid)] = item["timeupdated"]
+                    self.timeupdated_data[pfid_str] = item["timeupdated"]
 
             self.populate_table(entries)
             self.status_bar.showMessage(
                 f"Loaded {len(entries)} items | Last updated: {datetime.now().strftime('%H:%M:%S')}"
             )
+            self.entries = entries
 
             if not self.refresh_timer.isActive():
                 self.refresh_timer.start()
 
         except Exception as e:
-            self.refresh_timer.stop()
             logger.error(f"Error loading ACF data: {str(e)}")
             error_msg = f"{str(e)}"
             self.status_bar.showMessage(error_msg)
+        finally:
+            self._set_buttons_enabled(True)
+
+    _logged_warnings: set[tuple[str, str]] = set()
+
+    def _log_acf_load_result(
+        self, source_name: str, path: Path, data: dict[str, Any]
+    ) -> None:
+        if data:
+            logger.info(f"Loaded ACF data from {source_name} at {path}")
+        else:
+            key = (source_name, str(path))
+            if key not in self._logged_warnings:
+                logger.warning(f"No ACF data loaded from {source_name} at {path}")
+                self._logged_warnings.add(key)
 
     def filter_table(self) -> None:
         """
@@ -224,9 +389,15 @@ class LogReader(QDialog):
                 if item and isinstance(item, QTableWidgetItem):
                     item_text = item.text() or ""
                     if use_regex and pattern is not None:
-                        if pattern.search(item_text):
-                            match = True
-                            break
+                        try:
+                            if pattern.search(item_text):
+                                match = True
+                                break
+                        except re.error:
+                            # If regex fails during search, fallback to substring
+                            if search_text.lower() in item_text.lower():
+                                match = True
+                                break
                     else:
                         if search_text.lower() in item_text.lower():
                             match = True
@@ -239,12 +410,8 @@ class LogReader(QDialog):
 
         Errors are shown in the status bar and logged with full stack traces.
         Includes detailed metadata headers in the CSV file.
-
-        Raises:
-            PermissionError: Shows status message and logs error if file permissions issue
-            OSError: Shows status message and logs error for filesystem issues
-            Exception: Shows status message and logs full stack trace for other errors
         """
+        self._set_buttons_enabled(False)
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Export to CSV",
@@ -252,6 +419,8 @@ class LogReader(QDialog):
             "CSV Files (*.csv)",
         )
         if not file_path:
+            self.status_bar.showMessage("Export canceled by user.")
+            self._set_buttons_enabled(True)
             return
 
         try:
@@ -263,18 +432,22 @@ class LogReader(QDialog):
             self.status_bar.showMessage(error_msg)
             logger.error(f"Export permission error: {str(e)} - file: {file_path}")
             show_warning(
-                "Export Error",
-                f"{error_msg}",
+                title="Export Error",
+                text="Export failed: Permission denied - check file permissions",
+                information=f"{error_msg}",
             )
+            self._set_buttons_enabled(True)
             return
         except OSError as e:
             error_msg = f"Export failed: File system error - {str(e)}"
             self.status_bar.showMessage(error_msg)
             logger.error(f"Export filesystem error: {str(e)} - file: {file_path}")
             show_warning(
-                "Export Error",
-                f"{error_msg}",
+                title="Export Error",
+                text="Export failed: File system error",
+                information=f"{error_msg}",
             )
+            self._set_buttons_enabled(True)
             return
 
         try:
@@ -317,6 +490,7 @@ class LogReader(QDialog):
                 for row in range(self.table_widget.rowCount()):
                     if progress.wasCanceled():
                         self.status_bar.showMessage("Export canceled by user.")
+                        self._set_buttons_enabled(True)
                         return
 
                     row_data = []
@@ -340,9 +514,12 @@ class LogReader(QDialog):
             self.status_bar.showMessage(error_msg)
             logger.error(f"Export error: {str(e)}", exc_info=True)
             show_warning(
-                "Export Error",
-                f"{error_msg}",
+                title="Export Error",
+                text="Export failed due to an unknown error",
+                information=f"{error_msg}",
             )
+        finally:
+            self._set_buttons_enabled(True)
 
     def _get_column_description(self, col: int) -> str:
         """Get description for a table column."""
@@ -351,96 +528,6 @@ class LogReader(QDialog):
             return column.description
         except ValueError:
             return ""
-
-    def get_mod_name_from_pfid(self, pfid: Union[str, int, None]) -> str:
-        """
-        Get a mod's name from its PublishedFileID.
-
-        Args:
-            pfid: The PublishedFileID to lookup (str, int or None)
-
-        Returns:
-            str: The mod name or "Unknown Mod" if not found
-
-        Examples:
-            >>> get_mod_name_from_pfid("12345")
-            "Example Mod"
-            >>> get_mod_name_from_pfid(None)
-            "Unknown Mod"
-        """
-        if not pfid:
-            return "Unknown Mod"
-
-        pfid_str = str(pfid)
-        if not pfid_str.isdigit():
-            return f"Unknown Mod (Invalid ID: {pfid_str})"
-
-        metadata = self._get_mod_metadata(pfid_str)
-        if not isinstance(metadata, dict):
-            return f"Unknown Mod ({pfid_str})"
-
-        name = metadata.get("name") or metadata.get("steamName")
-        return str(name) if name else f"Unknown Mod ({pfid_str})"
-
-    def get_mod_path_from_pfid(self, pfid: Union[str, int, None]) -> str:
-        """
-        Get a mod's filesystem path from its PublishedFileID.
-        Returns "Unknown path" if the mod cannot be found.
-        """
-        if not pfid:
-            return "Unknown path"
-
-        pfid = str(pfid)
-        metadata = self._get_mod_metadata(pfid)
-
-        # Try to get path from metadata
-        path = metadata.get("path")
-        if path:
-            return path
-
-        return f"Unknown path ({pfid})"
-
-    def _get_mod_metadata(self, pfid: str) -> dict[str, Any]:
-        """
-        Helper method to get metadata for a mod by PublishedFileID.
-        Checks both internal and external metadata sources.
-
-        Args:
-            pfid: The PublishedFileID to lookup
-        Returns:
-            Dictionary containing metadata or empty dict if not found
-        Raises:
-            AttributeError: If metadata_manager cannot be initialized
-        """
-        try:
-            if not hasattr(self, "metadata_manager"):
-                self.metadata_manager = MetadataManager.instance()
-
-            # First check internal local metadata
-            if hasattr(self.metadata_manager, "internal_local_metadata"):
-                for (
-                    uuid,
-                    metadata,
-                ) in self.metadata_manager.internal_local_metadata.items():
-                    if (
-                        metadata
-                        and isinstance(metadata, dict)
-                        and metadata.get("publishedfileid") == pfid
-                    ):
-                        return metadata
-
-            # Then check external steam metadata if available
-            if hasattr(self.metadata_manager, "external_steam_metadata"):
-                steam_metadata = getattr(
-                    self.metadata_manager, "external_steam_metadata", {}
-                )
-                if isinstance(steam_metadata, dict):
-                    return steam_metadata.get(pfid, {})
-
-            return {}
-        except Exception as e:
-            self.status_bar.showMessage(f"Metadata lookup failed: {str(e)}")
-            return {}
 
     def get_relative_time(self, timestamp: Union[str, int, None]) -> str:
         """
@@ -525,37 +612,41 @@ class LogReader(QDialog):
                 ]
             )
 
-            metadata = (
-                getattr(self.metadata_manager, "external_steam_metadata", {})
-                if hasattr(self, "metadata_manager")
-                else {}
-            )
+            # metadata = (
+            #     getattr(self.metadata_manager, "external_steam_metadata", {})
+            #     if hasattr(self, "metadata_manager")
+            #     else {}
+            # )
 
-            if metadata is None:
-                metadata = {}
+            # if metadata is None:
+            #     metadata = {}
 
             self.table_widget.setSortingEnabled(False)
             self._metadata_cache.clear()
 
             for row_index, entry in enumerate(entries):
-                pfid = str(entry.get("published_file_id", ""))
+                # Ensure pfid is a valid string before passing to get_mod_name_from_pfid
+                pfid = str(entry.get("published_file_id", "")).strip()
+                if not pfid.isdigit():
+                    logger.warning(f"Invalid PFID encountered: {pfid}")
+                    pfid = "Unknown"
 
-                # Get cached metadata or fetch new
-                mod_metadata = self._metadata_cache.get(pfid)
-                if mod_metadata is None:
-                    mod_metadata = metadata.get(pfid, {})
-                    self._metadata_cache[pfid] = mod_metadata
+                # Use the validated pfid to fetch the mod name and path
+                try:
+                    mod_name = get_mod_name_from_pfid(pfid)
+                    mod_path = get_mod_path_from_pfid(pfid)
+                except Exception as e:
+                    logger.error(f"Error getting mod info for PFID {pfid}: {str(e)}")
+                    mod_name = f"Error retrieving name: {pfid}"
+                    mod_path = f"Error retrieving path: {pfid}"
 
-                # Create all items for the row first
                 items = [
                     QTableWidgetItem(pfid),  # COL_PFID
                     None,  # COL_LAST_UPDATED placeholder
                     None,  # COL_RELATIVE_TIME placeholder
                     QTableWidgetItem(str(entry.get("type", "unknown"))),  # COL_TYPE
-                    QTableWidgetItem(
-                        mod_metadata.get("steamName", self.get_mod_name_from_pfid(pfid))
-                    ),  # COL_MOD_NAME
-                    QTableWidgetItem(self.get_mod_path_from_pfid(pfid)),  # COL_MOD_PATH
+                    QTableWidgetItem(mod_name),  # COL_MOD_NAME
+                    QTableWidgetItem(mod_path),  # COL_MOD_PATH
                 ]
 
                 # Handle timestamp columns
@@ -591,8 +682,18 @@ class LogReader(QDialog):
             self.table_widget.setUpdatesEnabled(True)
 
     def import_acf_data(self) -> None:
-        EventBus().do_import_acf.emit()
-        self.load_acf_data()
+        answer = show_dialogue_conditional(
+            title="Conform acf import",
+            text="This will replace your current steamcmd .acf file",
+            information="Are you sure you want to import .acf? THis only works for steamcmd",
+            button_text_override=[
+                "Import .acf",
+            ],
+        )
+        # Import .acf if user wants to import
+        if "Import" in answer:
+            EventBus().do_import_acf.emit()
+            self.load_acf_data()
 
     def export_acf_data(self) -> None:
         """
