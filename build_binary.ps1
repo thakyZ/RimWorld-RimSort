@@ -8,6 +8,7 @@ using namespace System.IO;
 using namespace System.Linq;
 using namespace System.Management;
 using namespace System.Management.Automation;
+using namespace System.Management.Automation.Host;
 using namespace System.Net;
 using namespace System.Security.Cryptography;
 using namespace System.Security.Principal;
@@ -24,104 +25,78 @@ using namespace Microsoft.PowerShell.Commands;
 Param (
   # Specifies an optional string for the versioning format. Defaults to "v${major}.${minor}.${patch}".
   [Parameter(Mandatory = $False,
-             HelpMessage = 'An optional string for the versioning format. Defaults to "v${major}.${minor}.${patch}".')]
+            HelpMessage = 'An optional string for the versioning format. Defaults to "v${major}.${minor}.${patch}".')]
   [ValidateNotNullOrWhiteSpace()]
   [string]
   $VersionFormat = 'v${major}.${minor}.${patch}',
   # Specifies a switch to Generate At Test Ations.
   [Parameter(Mandatory = $False,
-             HelpMessage = 'A switch to Generate At Test Ations.')]
+            HelpMessage = 'A switch to Generate At Test Ations.')]
   [switch]
   $AtTest,
   # Specifies a secure string for the GitHub secret when doing GitHub actions.
   [Parameter(Mandatory = $False,
-             HelpMessage = 'A secure string for the GitHub secret when doing GitHub actions.')]
-  [ValidateNotNull()]
-  [SecureString]
+            HelpMessage = 'A secure string for the GitHub secret when doing GitHub actions.')]
+  [AllowNull()]
+  [object]
   $GitHubToken,
   # Specifies an override for the output build version. Should be a [System.Collection.Hashtable] or [System.Management.Automation.PSCustomObject].
   [Parameter(Mandatory = $False,
-             HelpMessage = 'An override for the output build version. Should be a [System.Collection.Hashtable] or [System.Management.Automation.PSCustomObject].')]
+            HelpMessage = 'An override for the output build version. Should be a [System.Collection.Hashtable] or [System.Management.Automation.PSCustomObject].')]
   [Alias('Version', 'Override')]
   [ValidateNotNull()]
   [object]
   $VersionOverride,
   # Specifies an override for the override of the output build version. Specifies to use the last version if avaliable.
   [Parameter(Mandatory = $False,
-             HelpMessage = 'An override for the override of the output build version. Specifies to use the last version if avaliable.')]
+            HelpMessage = 'An override for the override of the output build version. Specifies to use the last version if avaliable.')]
   [switch]
-  $UseLastVersion
+  $UseLastVersion,
+  # Specifies a switch to ignore a version mismatch with Python.
+  [Parameter(Mandatory = $False,
+            HelpMessage = 'A switch to ignore a version mismatch with Python.')]
+  [switch]
+  $OverridePythonVersion
 )
 
 Begin {
-  If ($PSBoundParameters.ContainsKey('VersionOverride')) {
-    If ($VersionOverride -isnot [Hashtable] -or $VersionOverride -isnot [PSCustomObject] -or $VersionOverride -isnot [PSCustomObject]) {
-      Throw "Parameter VersionOverride should be a [System.Collection.Hashtable] or [System.Management.Automation.PSCustomObject], got [$($VersionOverride.GetType().FullName)].";
-    }
-  }
-
-  [bool] $script:Debug = ($PSBoundParameters.ContainsKey('Debug'));
-  [bool] $script:Verbose = ($PSBoundParameters.ContainsKey('Verbose'));
-  [bool] $script:WhatIf = ($PSBoundParameters.ContainsKey('WhatIf'));
-
-  Push-Location -LiteralPath $PSScriptRoot -Debug:$script:Debug -Verbose:$script:Verbose;
-  [string] $Platform = 'Windows';
-  [string] $Arch = 'x86_64';
-  [string] $env:BUILD_OUTPUT = '__main__.dist';
-  [string] $env:Executable = 'RimSort.exe';
-
-  If ($PSBoundParameters.ContainsKey('GitHubToken') -and $Null -ne $GitHubToken) {
-    $env:GitHubToken = (ConvertFrom-SecureString -SecureString $GitHubToken -AsPlainText -Debug:$script:Debug -Verbose:$script:Verbose);
-  } ElseIf ($PSBoundParameters.ContainsKey('GitHubToken') -and $Null -eq $GitHubToken) {
-    $env:GitHubToken = (Read-Host -Prompt 'GitHub Token:' -MaskInput);
-  } ElseIf (-not $PSBoundParameters.ContainsKey('GitHubToken') -and $Null -eq $GitHubToken -and $Null -ne $env:GitHubToken) {
-    $env:GitHubToken = $env:GitHubToken;
-  }
-
-  [bool] $DidNotStartPyEnv = $True;
-  [string] $PyEnvActivateScript = (Join-Path -Path $PWD -ChildPath '*' -AdditionalChildPath @('Scripts', 'activate.ps1'));
-  [FileInfo] $PythonEnvActivatePath = $Null;
-  [CommandInfo] $PythonCommand = (Get-Command -Name 'python' -ErrorAction SilentlyContinue -Debug:$script:Debug -Verbose:$script:Verbose);
-
-  If (Test-Path -Path $PyEnvActivateScript -PathType Leaf -Debug:$script:Debug -Verbose:$script:Verbose) {
-    $PythonEnvActivatePath = (Get-Item -Path "$($PWD.Path)\*\Scripts\activate.ps1" -Debug:$script:Debug -Verbose:$script:Verbose);
-
-    If ($Null -ne $PythonCommand -and (Get-Item -LiteralPath $PythonCommand.Source -Debug:$script:Debug -Verbose:$script:Verbose).Directory.FullName -ne $PythonEnvActivatePath.Directory.FullName) {
-      & ($PythonEnvActivatePath | Select-Object -First 1).FullName | Out-Host;
-    }
-
-    $DidNotStartPyEnv = $False;
-  }
-
   Function Invoke-Process {
     [CmdletBinding(SupportsShouldProcess = $True)]
     Param(
       # Specifies the command info object to execute the process with.
       [Parameter(Mandatory = $True,
-                 HelpMessage = 'The command info object to execute the process with.')]
+                HelpMessage = 'The command info object to execute the process with.')]
       [ValidateNotNull()]
-      [CommandInfo]
+      [object]
       $Command,
       # Specifies the collection of arguments to run the command with.
       [Parameter(Mandatory = $False,
-                 HelpMessage = 'The collection of arguments to run the command with.')]
+                HelpMessage = 'The collection of arguments to run the command with.')]
       [AllowEmptyCollection()]
       [string[]]
       $Arguments = @(),
       # Specifies the string to pipe into the command if needed.
       [Parameter(Mandatory = $False,
-                 HelpMessage = 'The string to pipe into the command if needed.')]
+                HelpMessage = 'The string to pipe into the command if needed.')]
       [ValidateNotNull()]
       [object]
       $Pipe,
       # Specifies a switch to output the data normally.
       [Parameter(Mandatory = $False,
-                 HelpMessage = 'A switch to output the data normally.')]
+                HelpMessage = 'A switch to output the data normally.')]
       [switch]
       $Raw
     )
 
     Begin {
+      If ($Command -isnot [CommandInfo] -and $Command -isnot [ApplicationInfo] -and $Command -isnot [AliasInfo] -and $Command -isnot [ExternalScriptInfo] -and $Command -isnot [FunctionInfo] -and $Command -isnot [RemoteCommandInfo]) {
+        If ($Command -is [string]) {
+          $Command = (Get-Command -Name $Command);
+        } Else {
+          Throw "Invalid type passsed to -Command parameter expected [$([CommandInfo])] or a [$([string])] to a command, got [$($Command.GetType().FullName)]";
+        }
+      }
+
       [string[]] $Output = $Null;
     } Process {
       If ($PSBoundParameters.ContainsKey('Pipe')) {
@@ -149,6 +124,178 @@ Begin {
       Write-Output -NoEnumerate -InputObject $Output;
     }
   }
+
+  Function Test-PythonVersion {
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    Param(
+      # Specifies the command info for the python command
+      [Parameter(Mandatory = $True,
+                HelpMessage = 'A CommandInfo or equivelent to specify the python command')]
+      [ValidateNotNull()]
+      [CommandInfo]
+      $PythonCommand
+    )
+
+    Begin {
+      [PSCustomObject] $Output = [PSCustomObject]::new();
+      [string] $PythonVersionFile = (Join-Path -Path $PSScriptRoot -ChildPath '.python-version');
+      [Version] $InstalledVersion = $Null;
+      [Version] $LocalVersion = $Null;
+      [bool] $IsValid = $False;
+    } Process {
+      [string] $InstalledVersionString = (Invoke-Process -Command $PythonCommand -Arguments @('--version'));
+
+      If ([string]::IsNullOrWhiteSpace($InstalledVersionString)) {
+        Throw new "Received no output from the `"python --version`" command.";
+      } Else {
+        $InstalledVersion = [Version]::Parse("$($InstalledVersionString.Trim() -replace '^Python ', '')");
+      }
+
+      If (-not (Test-Path -Path $PythonVersionFile -PathType Leaf)) {
+        Write-Warning -Message "Could not find local Python version file at `"$($PythonVersionFile)`", using $($InstalledVersion), allowing anyways...";
+        $IsValid = $True;
+      } Else {
+        [string] $LocalVersionString = (Get-Content -LiteralPath $PythonVersionFile -Raw);
+
+        If ([string]::IsNullOrWhiteSpace($InstalledVersionString)) {
+          Write-Warning -Message "Could get valid content of local Python version file at `"$($PythonVersionFile)`", using $($InstalledVersion), allowing anyways...";
+          $IsValid = $True;
+        } Else {
+          $LocalVersion = [Version]::Parse($LocalVersionString.Trim());
+
+          If ($InstalledVersion -eq $LocalVersion) {
+            $IsValid = $True;
+          }
+        }
+      }
+    } End {
+      $Output | Add-Member -MemberType NoteProperty -Name 'IsValid' -Value $IsValid;
+      $Output | Add-Member -MemberType NoteProperty -Name 'PythonVersionFile' -Value $PythonVersionFile;
+      $Output | Add-Member -MemberType NoteProperty -Name 'LocalVersion' -Value $LocalVersion;
+      $Output | Add-Member -MemberType NoteProperty -Name 'InstalledVersion' -Value $InstalledVersion;
+      Write-Output -NoEnumerate -InputObject $Output;
+    }
+  }
+
+  Function Start-PythonVEnv {
+    [CmdletBinding(SupportsShouldProcess = $True)]
+    Param(
+      # Specifies a switch to ignore a version mismatch with Python.
+      [Parameter(Mandatory = $False,
+                HelpMessage = 'A switch to ignore a version mismatch with Python.')]
+      [switch]
+      $OverridePythonVersion
+    )
+
+    Begin {
+      [bool] $DidNotStartPyEnv = $True;
+      [string] $PyEnvActivateScript = (Join-Path -Path $PWD -ChildPath '*' -AdditionalChildPath @('Scripts', 'activate.ps1'));
+      [FileInfo] $PythonEnvActivatePath = $Null;
+      [CommandInfo] $PythonCommand = (Get-Command -Name 'python' -ErrorAction SilentlyContinue -Debug:$script:Debug -Verbose:$script:Verbose);
+      [CommandInfo] $VEnvCommand = (Get-Command -Name 'venv' -ErrorAction SilentlyContinue);
+      [CommandInfo] $PyEnvCommand = (Get-Command -Name 'pyenv' -ErrorAction SilentlyContinue);
+      [PSCustomObject] $PythonTest = (Test-PythonVersion -PythonCommand $PythonCommand -ErrorAction SilentlyContinue);
+    } Process {
+      If (Test-Path -Path $PyEnvActivateScript -PathType Leaf -Debug:$script:Debug -Verbose:$script:Verbose) {
+        $PythonEnvActivatePath = (Get-Item -Path $PyEnvActivateScript -Debug:$script:Debug -Verbose:$script:Verbose);
+
+        If ($Null -ne $PythonCommand) {
+          If ((Get-Item -LiteralPath $PythonCommand.Source -Debug:$script:Debug -Verbose:$script:Verbose).Directory.FullName -ne $PythonEnvActivatePath.Directory.FullName) {
+            If ($PythonTest.IsValid) {
+              [string] $PythonEnvActivateCommand = ($PythonEnvActivatePath | Select-Object -First 1).FullName;
+              If ($PSCmdlet.ShouldProcess("Performing the operation `"Invoke-Process`" on target `"$($PythonEnvActivateCommand)`".", "Invoke-Process", $PythonEnvActivateCommand)) {
+                Invoke-Process -Command $PythonEnvActivateCommand -Raw;
+              }
+            } Else {
+              [int] $Choice = $Host.UI.PromptForChoice("Local venv has wrong python version.", "Reset local venv folder?", @(
+                  [ChoiceDescription]::new("&Yes", "Confirms the prompt"),
+                  [ChoiceDescription]::new("&No", "Rejects the prompt")
+                ), 1);
+              If ($Choice -eq 0) {
+
+              } ElseIf (-not $OverridePythonVersion.IsPresent) {
+                # Exit the prompt here...
+                Exit 0;
+              }
+            }
+          }
+
+          $DidNotStartPyEnv = $False;
+        } ElseIf ($Null -ne $PythonCommand -and $Null -eq $PyEnvCommand) {
+          Throw "Failed to find python on system path and failed to find pyenv on system path.";
+        }
+      }
+
+      $PythonTest = (Test-PythonVersion -PythonCommand $PythonCommand);
+
+      # Try setup pyenv
+      If ($DidNotStartPyEnv) {
+        [string[]] $CommandOutput = @();
+
+        If ($Null -ne $VEnvCommand) {
+          [string[]] $VEnvCommandArguments = @("$(Join-Path -Path $PWD -ChildPath '.venv')");
+          If ($PSCmdlet.ShouldProcess("Performing the operation `"Invoke-Process`" on target `"$($VEnvCommand)`", with arguments, [`"$($VEnvCommandArguments -join '", "')`"].", "Invoke-Process", $VEnvCommand)) {
+            Invoke-Process -Command $VEnvCommand -Arguments $VEnvCommandArguments;
+          }
+        } ElseIf ($Null -ne $PythonCommand) {
+          If (-not $PythonTest.IsValid) {
+            If ($Null -ne $PyEnvCommand) {
+              If ($PSCmdlet.ShouldProcess("Performing the operation `"Invoke-Process`" on target `"$($PyEnvCommand)`", with arguments, [`"$($VEnvCommandArguments -join '", "')`"].", "Invoke-Process", $VEnvCommand)) {
+                Invoke-Process -Command $PyEnvCommand -Arguments $VEnvCommandArguments;
+              }
+
+              # $CommandOutput = (Invoke-Process
+            }
+          }
+
+          Try {
+            $CommandOutput = @(Invoke-Process -Command $PythonCommand -Arguments @('-m', 'venv', "$(Join-Path -Path $PWD -ChildPath '.venv')"));
+          } Catch {
+            Write-Warning -Message "Failed to exectue venv command. Got output of:`n$($CommandOutput -join "`n")";
+            Throw;
+          }
+        }
+      }
+    }
+  }
+
+  If ($PSBoundParameters.ContainsKey('VersionOverride')) {
+    If ($Null -eq $VersionOverride) {
+      Throw "Parameter VersionOverride is null, it should not be.";
+    } ElseIf ($VersionOverride -isnot [Hashtable] -or $VersionOverride -isnot [OrderedHashtable] -or $VersionOverride -isnot [PSCustomObject] -or $VersionOverride -isnot [PSCustomObject]) {
+      Throw "Parameter VersionOverride should be a [$([Hashtable])], [$([OrderedHashtable])] or [$([System.Management.Automation.PSCustomObject])], got [$($VersionOverride.GetType().FullName)].";
+    }
+  }
+
+  [bool] $script:Debug = ($PSBoundParameters.ContainsKey('Debug'));
+  [bool] $script:Verbose = ($PSBoundParameters.ContainsKey('Verbose'));
+  [bool] $script:WhatIf = ($PSBoundParameters.ContainsKey('WhatIf'));
+
+  Push-Location -LiteralPath $PSScriptRoot -Debug:$script:Debug -Verbose:$script:Verbose;
+  [string] $Platform = 'Windows';
+  [string] $Arch = 'x86_64';
+  [string] $env:BUILD_OUTPUT = '__main__.dist';
+  [string] $env:Executable = 'RimSort.exe';
+
+  If ($PSBoundParameters.ContainsKey('GitHubToken')) {
+    If ($Null -ne $GitHubToken -and $GitHubToken -is [string]) {
+      # If ()
+      Throw "Do not use plain text for the GitHubToken parameter."
+    }
+
+    If ($Null -ne $GitHubToken -and $GitHubToken -is [SecureString]) {
+      $env:GitHubToken = (ConvertFrom-SecureString -SecureString $GitHubToken -AsPlainText -Debug:$script:Debug -Verbose:$script:Verbose);
+    } ElseIf ($Null -ne $GitHubToken -and $GitHubToken -isnot [SecureString]) {
+      Throw "Parameter GitHubToken should be a [$([SecureString])], got [$($GitHubToken.GetType().FullName)]";
+    } ElseIf ($Null -eq $GitHubToken) {
+      $env:GitHubToken = (Read-Host -Prompt 'GitHub Token:' -MaskInput);
+    }
+  } ElseIf ($Null -eq $GitHubToken -and $Null -ne $env:GitHubToken) {
+
+  }
+
+  Start-PythonVEnv -OverridePythonVersion:($OverridePythonVersion.IsPresent);
 } Process {
   Try {
     # Add submodules to pythonpath
@@ -626,21 +773,21 @@ Begin {
               Param(
                 # Specifies a pattern to test against.
                 [Parameter(Mandatory = $True,
-                           HelpMessage = 'A pattern to test against.')]
+                          HelpMessage = 'A pattern to test against.')]
                 [AllowEmptyString()]
                 [ValidateNotNull()]
                 [string]
                 $Pattern,
                 # Specifies a set of flags to test against.
                 [Parameter(Mandatory = $True,
-                           HelpMessage = 'A set of flags to test against..')]
+                          HelpMessage = 'A set of flags to test against..')]
                 [AllowEmptyString()]
                 [ValidatePattern('[idgs]{0,4}')]
                 [string]
                 $Flags,
                 # Specifies a PSCustomObject that determines the config of the commands.
                 [Parameter(Mandatory = $True,
-                           HelpMessage = 'A PSCustomObject that determines the config of the commands.')]
+                          HelpMessage = 'A PSCustomObject that determines the config of the commands.')]
                 [PSCustomObject]
                 $Config
               )
@@ -662,7 +809,7 @@ Begin {
                       Param(
                         # Specifies a PSCustomObject containing commit information.
                         [Parameter(Mandatory = $True,
-                                   HelpMessage = 'A PSCustomObject containing commit information.')]
+                                  HelpMessage = 'A PSCustomObject containing commit information.')]
                         [PSCustomObject]
                         $Commit
                       )
@@ -674,7 +821,7 @@ Begin {
                       Param(
                         # Specifies a PSCustomObject containing commit information.
                         [Parameter(Mandatory = $True,
-                                   HelpMessage = 'A PSCustomObject containing commit information.')]
+                                  HelpMessage = 'A PSCustomObject containing commit information.')]
                         [PSCustomObject]
                         $Commit
                       )
@@ -689,7 +836,7 @@ Begin {
                       Param(
                         # Specifies a PSCustomObject containing commit information.
                         [Parameter(Mandatory = $True,
-                                   HelpMessage = 'A PSCustomObject containing commit information.')]
+                                  HelpMessage = 'A PSCustomObject containing commit information.')]
                         [PSCustomObject]
                         $Commit
                       )
@@ -701,7 +848,7 @@ Begin {
                       Param(
                         # Specifies a PSCustomObject containing commit information.
                         [Parameter(Mandatory = $True,
-                                   HelpMessage = 'A PSCustomObject containing commit information.')]
+                                  HelpMessage = 'A PSCustomObject containing commit information.')]
                         [PSCustomObject]
                         $Commit
                       )
@@ -722,12 +869,12 @@ Begin {
               Param(
                 # Specifies a PSCustomObject that determines the current release information.
                 [Parameter(Mandatory = $True,
-                           HelpMessage = 'A PSCustomObject that determines the current release information.')]
+                          HelpMessage = 'A PSCustomObject that determines the current release information.')]
                 [PSCustomObject]
                 $Current,
                 # Specifies a string that determines the version type.
                 [Parameter(Mandatory = $True,
-                           HelpMessage = 'A string that determines the version type.')]
+                          HelpMessage = 'A string that determines the version type.')]
                 [ValidateSet('Major', 'Minor', 'Patch', 'None')]
                 [string]
                 $Type
@@ -790,32 +937,32 @@ Begin {
               Param(
                 # Specifies a PSCustomObject that determines the last release.
                 [Parameter(Mandatory = $True,
-                           HelpMessage = 'A PSCustomObject that determines the last release.')]
+                          HelpMessage = 'A PSCustomObject that determines the last release.')]
                 [PSCustomObject]
                 $LastRelease,
                 # Specifies a PSCustomObject that determines the current release information.
                 [Parameter(Mandatory = $True,
-                           HelpMessage = 'A PSCustomObject that determines the current release information.')]
+                          HelpMessage = 'A PSCustomObject that determines the current release information.')]
                 [PSCustomObject]
                 $CommitsSet,
                 # Specifies a ScriptBlock that checks against the major version.
                 [Parameter(Mandatory = $True,
-                           HelpMessage = 'A ScriptBlock that checks against the major version.')]
+                          HelpMessage = 'A ScriptBlock that checks against the major version.')]
                 [ScriptBlock]
                 $MajorPattern,
                 # Specifies a ScriptBlock that checks against the minor version.
                 [Parameter(Mandatory = $True,
-                           HelpMessage = 'A ScriptBlock that checks against the minor version.')]
+                          HelpMessage = 'A ScriptBlock that checks against the minor version.')]
                 [ScriptBlock]
                 $MinorPattern,
                 # Specifies a ScriptBlock that checks against the patch version.
                 [Parameter(Mandatory = $True,
-                           HelpMessage = 'A ScriptBlock that checks against the patch version.')]
+                          HelpMessage = 'A ScriptBlock that checks against the patch version.')]
                 [ScriptBlock]
                 $PatchPattern,
                 # Specifies a PSCustomObject that determines the config of the commands.
                 [Parameter(Mandatory = $True,
-                           HelpMessage = 'A PSCustomObject that determines the config of the commands.')]
+                          HelpMessage = 'A PSCustomObject that determines the config of the commands.')]
                 [PSCustomObject]
                 $Config
               )
@@ -1341,27 +1488,28 @@ Begin {
       $SemVersion = (Get-SemanticVersion -UseLastVersion:$UseLastVersion.IsPresent -VersionFormat $VersionFormat -ChangePath @('app', 'libs', 'submodules', 'themes') `
         -Debug:$script:Debug -Verbose:$script:Verbose);
     }
-    # Make (overwrite) version.xml
 
+    # Make (overwrite) version.xml
     Remove-Item -Force 'version.xml' `
       -WhatIf:$script:WhatIf -Debug:$script:Debug -Verbose:$script:Verbose;
-    Set-Content -LiteralPath 'version.xml' -Value @"
-<version>
-  <version>$($SemVersion.Outputs.Version)</version>
-  <major>$($SemVersion.Outputs.Major)</major>
-  <minor>$($SemVersion.Outputs.Minor)</minor>
-  <patch>$($SemVersion.Outputs.Patch)</patch>
-  <increment>$($SemVersion.Outputs.Increment)</increment>
-  <commit>$($SemVersion.Outputs.CurrentCommit)</commit>
-  <tag>$($SemVersion.Outputs.VersionTag)</tag>
-</version>
-"@ -WhatIf:$script:WhatIf -Debug:$script:Debug -Verbose:$script:Verbose;
+    Set-Content -LiteralPath 'version.xml' -Value (@(
+        "<version>",
+        "`t<version>$($SemVersion.Outputs.Version)</version>",
+        "`t<major>$($SemVersion.Outputs.Major)</major>",
+        "`t<minor>$($SemVersion.Outputs.Minor)</minor>",
+        "`t<patch>$($SemVersion.Outputs.Patch)</patch>",
+        "`t<increment>$($SemVersion.Outputs.Increment)</increment>",
+        "`t<commit>$($SemVersion.Outputs.CurrentCommit)</commit>",
+        "`t<tag>$($SemVersion.Outputs.VersionTag)</tag>",
+        "</version>") -join "`n") `
+      -WhatIf:$script:WhatIf -Debug:$script:Debug -Verbose:$script:Verbose;
 
     [bool] $SkipInstall = (Test-Path -LiteralPath (Join-Path -Path $PSScriptRoot -ChildPath '.installed') `
       -Debug:$script:Debug -Verbose:$script:Verbose);
 
     If (-not $SkipInstall) {
       # Setup Python
+
       [CommandInfo] $Pip = (Get-Command -Name 'pip' `
         -Debug:$script:Debug -Verbose:$script:Verbose);
       [CommandInfo] $Python = (Get-Command -Name 'python' `
@@ -1379,7 +1527,7 @@ Begin {
       Invoke-Process -Command $Pip -Arguments @('install', '-r', 'requirements.txt', '-r', 'requirements_build.txt') -Raw `
         -WhatIf:$script:WhatIf -Debug:$script:Debug -Verbose:$script:Verbose;
 
-      # Build Actions
+      # Build actions
 
       $ErrorActionPreference = 'Stop';
       Invoke-Process -Command $Python -Arguments @( `
@@ -1844,7 +1992,7 @@ Begin {
         # 'force'. Default is 'force'.
         [Parameter(Mandatory = $False,
                   HelpMessage = "Select console mode to use. Default mode is 'force' and creates a`nconsole window unless the program was started from one. With 'disable'`nit doesn't create or use a console at all. With 'attach' an existing`nconsole will be used for outputs. With 'hide' a newly spawned console`nwill be hidden and an already existing console will behave like`n'force'. Default is 'force'.")]
-        [ValidateSet('force', 'attach', 'hide')]
+        [ValidateSet('force', 'attach', 'hide', 'disable')]
         [string]
         $WindowsConsoleMode = 'force',
         # Add executable icon. Can be given multiple times for different resolutions
@@ -1879,6 +2027,11 @@ Begin {
                   HelpMessage = "Request Windows User Control, to enforce running from a few folders only, remote`ndesktop access. (Windows only). Defaults to off.")]
         [switch]
         $WindowsUacUiAccess,
+        # TODO: Document this
+        [Parameter(Mandatory = $False,
+                  HelpMessage = "TODO: Document this")]
+        [switch]
+        $FollowImports,
 
         ### macOS specific controls: ###
 
@@ -2440,7 +2593,7 @@ Begin {
             [string] $Output = [string]::Empty;
           } Process {
             If ($State -eq $True) {
-              $Output = $State.IsPresent.ToString().ToLower()
+              $Output = $State.ToString().ToLower()
             }
           } End {
             Write-Output -NoEnumerate -InputObject $Output;
@@ -2474,6 +2627,7 @@ Begin {
         [string] $_NoDebugImmortalAssumptions = (Get-ProcessedSwitch -State $NoDebugImmortalAssumptions.IsPresent);
         [string] $_Unstripped = (Get-ProcessedSwitch -State $Unstripped.IsPresent);
         [string] $_TraceExecution = (Get-ProcessedSwitch -State $TraceExecution.IsPresent);
+        [string] $_FollowImports = (Get-ProcessedSwitch -State $FollowImports.IsPresent);
 
         $env:NUITKA_WORKFLOW_INPUTS = (@{
             'nuitka-version'                        = $NuitkaVersion
@@ -2568,6 +2722,7 @@ Begin {
             'xml'                                   = $Xml;
             'experimental'                          = "$($Experimental -join "`n")";
             'low-memory'                            = $_LowMemory;
+            'follow-imports'                       = $_FollowImports;
           } | ConvertTo-Json -Compress);
         $ErrorActionPreference = 'Stop';
         Invoke-Process -Command $Python -Arguments @('-m', 'nuitka', '--github-workflow-options') -Raw `
@@ -2589,30 +2744,31 @@ Begin {
 
     [Hashtable] $DataFiles = @{'version.xml'='version.xml'};
 
-    # If ($IsWindows) {
-    #   $DataFiles.Add("$((Get-Item -LiteralPath './themes/default-icons/AppIcon_alt.ico').FullName)", 'icon.ico');
-    # }
-
-    Invoke-NuitkaAction -SkipInstall:$SkipInstall -NuitkaVersion 'main' -ScriptName 'app/__main__.py' -Mode $Mode `
-      -FileDescription 'RimSort' -IncludeDataFiles $DataFiles -ProductVersion $SemVersion.Outputs.VersionTag `
-      -FileVersion $SemVersion.Outputs.VersionTag -MacOsAppVersion $SemVersion.Outputs.VersionTag `
-      -WindowsIconFromIco './themes/default-icons/AppIcon_alt.ico' -LinuxIcon './themes/default-icons/RimSort_Icon_64x64_alt.svg' `
-      -MacOsAppIcon './themes/default-icons/AppIcon_a.icns' -WindowsConsoleMode 'attach' `
-      -OneFileTempDirSpec '{CACHE_DIR}/{PRODUCT}/{VERSION}' `
-      -WhatIf:$script:WhatIf -Debug:$script:Debug -Verbose:$script:Verbose;
-      # this is used to add an exception to Windows Defender or other Anti-Virus,
-      # because Windows Defender is annoying when it comes to Nuitka compiles
-
     # Set FILENAME
     [string] $FILENAME = $Platform;
     $FILENAME += $Arch;
     $env:FILENAME = "$FILENAME";
+
+    # If ($IsWindows) {
+    #   $DataFiles.Add("$((Get-Item -LiteralPath './themes/default-icons/AppIcon_alt.ico').FullName)", 'icon.ico');
+    # }
 
     [string] $OutExec = "RimSort";
 
     If ($IsWIndows) {
       $OutExec = "$($OutExec).exe";
     }
+
+    Invoke-NuitkaAction -SkipInstall:$SkipInstall -NuitkaVersion 'main' -ScriptName 'app/__main__.py' -Mode $Mode `
+      -FileDescription 'RimSort' -IncludeDataFiles $DataFiles -ProductVersion $SemVersion.Outputs.VersionTag `
+      -FileVersion $SemVersion.Outputs.VersionTag -MacOsAppVersion $SemVersion.Outputs.VersionTag `
+      -WindowsIconFromIco './themes/default-icons/AppIcon_alt.ico' -LinuxIcon './themes/default-icons/RimSort_Icon_64x64_alt.svg' `
+      -MacOsAppIcon './themes/default-icons/AppIcon_a.icns' -WindowsConsoleMode 'disable' `
+      -OneFileTempDirSpec '{CACHE_DIR}/{PRODUCT}/cache/{VERSION}' -OutputFile $OutExec `
+      -EnablePlugins @('pyside6') -FollowImports `
+      -WhatIf:$script:WhatIf -Debug:$script:Debug -Verbose:$script:Verbose;
+      # this is used to add an exception to Windows Defender or other Anti-Virus,
+      # because Windows Defender is annoying when it comes to Nuitka compiles
 
     # Find Executable
     [FileInfo] $Executable = (Get-ChildItem -LiteralPath . -Recurse -File -Filter $OutExec `
