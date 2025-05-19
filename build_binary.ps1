@@ -2749,9 +2749,9 @@ Begin {
     $FILENAME += $Arch;
     $env:FILENAME = "$FILENAME";
 
-    # If ($IsWindows) {
-    #   $DataFiles.Add("$((Get-Item -LiteralPath './themes/default-icons/AppIcon_alt.ico').FullName)", 'icon.ico');
-    # }
+    If ($IsWindows) {
+      $DataFiles.Add("$((Get-Item -LiteralPath './themes/default-icons/AppIcon_alt.ico').FullName)", 'icon.ico');
+    }
 
     [string] $OutExec = "RimSort";
 
