@@ -56,3 +56,4 @@ norecursedirs = ['submodules']
 
 [tool.pyright]
 pythonPlatform = "All"
+ignore = ['submodules']
