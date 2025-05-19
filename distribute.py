@@ -336,6 +336,8 @@ def copy_swp_libs() -> None:
                 _CWD, "libs", f"SteamworksPy_{_PROCESSOR}.so"
             )
             STEAMWORKSPY_LIB_FIN = os.path.join(_CWD, "libs", "SteamworksPy.so")
+        else:
+            raise OSError(f"operating system {_SYSTEM} is not supported")
         print("Copying libs for non-Windows platform")
         shutil.copyfile(STEAMWORKSPY_BUILT_LIB, STEAMWORKSPY_LIB_FIN)
 
