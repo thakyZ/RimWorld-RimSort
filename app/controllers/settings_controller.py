@@ -8,6 +8,7 @@ from loguru import logger
 from PySide6.QtCore import QObject, Slot
 from PySide6.QtWidgets import QApplication, QLineEdit, QMessageBox
 
+from app.controllers.language_controller import LanguageController
 from app.controllers.theme_controller import ThemeController
 from app.models.settings import Instance, Settings
 from app.utils import rimsort_boot_config
@@ -65,6 +66,8 @@ class SettingsController(QObject):
         self._last_file_dialog_path = str(Path.home())
 
         self.theme_controller = ThemeController()
+
+        self.language_controller = LanguageController()
 
         self.app_instance = QApplication.instance()
 
@@ -673,6 +676,14 @@ class SettingsController(QObject):
         )
         self.theme_controller.setup_theme_dialog(self.settings_dialog, self.settings)
 
+        self.language_controller.populate_languages_combobox(
+            self.settings_dialog.language_combobox
+        )
+
+        self.language_controller.setup_language_dialog(
+            self.settings_dialog, self.settings
+        )
+
         # Advanced tab
         self.settings_dialog.debug_logging_checkbox.setChecked(
             self.settings.debug_logging_enabled
@@ -874,6 +885,12 @@ class SettingsController(QObject):
         )
         self.settings.theme_name = self.settings_dialog.themes_combobox.currentText()
 
+        self.settings.font_family = self.settings_dialog.font_family_combobox.currentText()
+
+        self.settings.font_size = self.settings_dialog.font_size_spinbox.value()
+
+        self.settings.language = self.settings_dialog.language_combobox.currentData()
+
         # Advanced tab
         self.settings.debug_logging_enabled = (
             self.settings_dialog.debug_logging_checkbox.isChecked()
@@ -926,8 +943,8 @@ class SettingsController(QObject):
         Reset the settings to their default values.
         """
         answer = BinaryChoiceDialog(
-            title="Reset to defaults",
-            text="Are you sure you want to reset all settings to their default values?",
+            title=self.tr("Reset to defaults"),
+            text=self.tr("Are you sure you want to reset all settings to their default values?"),
         )
         if not answer.exec_is_positive():
             return
@@ -951,6 +968,10 @@ class SettingsController(QObject):
         self.settings_dialog.close()
         self._update_model_from_view()
         self.settings.save()
+        self.theme_controller.set_font(
+            self.settings.font_family,
+            self.settings.font_size,
+        )
         self.theme_controller.apply_selected_theme(
             self.settings.enable_themes,
             self.settings.theme_name,
@@ -1118,8 +1139,8 @@ class SettingsController(QObject):
         """
         if not skip_confirmation:
             answer = BinaryChoiceDialog(
-                title="Clear all locations",
-                text="Are you sure you want to clear all locations?",
+                title=self.tr("Clear all locations"),
+                text=self.tr("Are you sure you want to clear all locations?"),
             )
             if not answer.exec_is_positive():
                 return
@@ -1678,12 +1699,12 @@ class SettingsController(QObject):
         Build the Steam Workshop database.
         """
         confirm_diag = BinaryChoiceDialog(
-            title="Confirm Build Database",
-            text="Are you sure you want to build the Steam Workshop database?",
+            title=self.tr("Confirm Build Database"),
+            text=self.tr("Are you sure you want to build the Steam Workshop database?"),
             information=(
-                "For most users this is not necessary as the GitHub SteamDB is adequate. Building the database may take a long time. "
+                self.tr("For most users this is not necessary as the GitHub SteamDB is adequate. Building the database may take a long time. "
                 "Depending on your settings, it may also crawl through the entirety of the steam workshop via the webAPI. "
-                "This can be a large amount of data and take a long time. Are you sure you want to continue?"
+                "This can be a large amount of data and take a long time. Are you sure you want to continue?")
             ),
             icon=QMessageBox.Icon.Warning,
         )

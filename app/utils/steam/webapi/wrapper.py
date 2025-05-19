@@ -8,7 +8,7 @@ from time import time
 from typing import TYPE_CHECKING, Any, Dict
 
 from loguru import logger
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QCoreApplication, QObject, Signal
 from PySide6.QtWidgets import QInputDialog
 from requests import post as requests_post
 from requests.exceptions import JSONDecodeError
@@ -49,6 +49,7 @@ class CollectionImport:
             metadata_manager: The metadata manager instance.
         """
         self.metadata_manager = metadata_manager
+        self.translate = QCoreApplication.translate
         self.package_ids: list[
             str
         ] = []  # Initialize an empty list to store package IDs
@@ -59,8 +60,8 @@ class CollectionImport:
         # Initialize the UI for entering collection links
         self.link_input = QInputDialog().getText(
             None, # type: ignore # Is okay to set parent to None
-            "Add Workshop collection link",
-            "Add Workshop collection link",
+            self.translate("CollectionImport", "Add Workshop collection link"),
+            self.translate("CollectionImport", "Add Workshop collection link"),
         )
         logger.info("Workshop collection link Input UI initialized successfully!")
         if self.link_input[1]:
@@ -100,8 +101,8 @@ class CollectionImport:
             )
             # Show warning message box
             show_warning(
-                title="Invalid Link",
-                text="Invalid Workshop collection link. Please enter a valid Workshop collection link.",
+                title=self.translate("CollectionImport", "Invalid Link"),
+                text=self.translate("CollectionImport", "Invalid Workshop collection link. Please enter a valid Workshop collection link."),
             )
             return
 
@@ -112,8 +113,8 @@ class CollectionImport:
             )
             # Show warning message box
             show_warning(
-                title="Invalid Database",
-                text="Cannot import collection without SteamDB supplied! Please configure Steam Workshop Database in settings.",
+                title=self.translate("CollectionImport", "Invalid Database"),
+                text=self.translate("CollectionImport", "Cannot import collection without SteamDB supplied! Please configure Steam Workshop Database in settings."),
             )
             return
 
