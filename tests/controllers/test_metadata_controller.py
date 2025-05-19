@@ -182,7 +182,7 @@ def test_metadata_controller_delete_mod(
     assert aux_metadata_2 is not None
 
     # Ensure mod_2 is deleted
-    metadata_controller_p.delete_mod(str(local_mod_2_path))
+    metadata_controller_p.delete_mod(Path(local_mod_2_path))
     mod_2, aux_metadata_2 = metadata_controller_p.get_metadata_with_path(
         local_mod_2_path
     )
