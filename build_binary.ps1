@@ -2759,13 +2759,13 @@ Begin {
       $OutExec = "$($OutExec).exe";
     }
 
-    Invoke-NuitkaAction -SkipInstall:$SkipInstall -NuitkaVersion 'main' -ScriptName 'app/__main__.py' -Mode $Mode `
-      -FileDescription 'RimSort' -IncludeDataFiles $DataFiles -ProductVersion $SemVersion.Outputs.VersionTag `
+    Invoke-NuitkaAction -SkipInstall:$SkipInstall -NuitkaVersion 'main' -ScriptName 'app/__main__.py' <#-Mode $Mode#> `
+      <#-FileDescription 'RimSort'#> -IncludeDataFiles $DataFiles -ProductVersion $SemVersion.Outputs.VersionTag `
       -FileVersion $SemVersion.Outputs.VersionTag -MacOsAppVersion $SemVersion.Outputs.VersionTag `
-      -WindowsIconFromIco './themes/default-icons/AppIcon_alt.ico' -LinuxIcon './themes/default-icons/RimSort_Icon_64x64_alt.svg' `
-      -MacOsAppIcon './themes/default-icons/AppIcon_a.icns' -WindowsConsoleMode 'disable' `
-      -OneFileTempDirSpec '{CACHE_DIR}/{PRODUCT}/cache/{VERSION}' -OutputFile $OutExec `
-      -EnablePlugins @('pyside6') -FollowImports `
+      <#-WindowsIconFromIco './themes/default-icons/AppIcon_alt.ico' -LinuxIcon './themes/default-icons/RimSort_Icon_64x64_alt.svg'#> `
+      <#-MacOsAppIcon './themes/default-icons/AppIcon_a.icns' -WindowsConsoleMode 'disable'#> `
+      <#-OneFileTempDirSpec '{CACHE_DIR}/{PRODUCT}/cache' -OutputFile $OutExec#> `
+      <#-EnablePlugins @('pyside6') -FollowImports#> `
       -WhatIf:$script:WhatIf -Debug:$script:Debug -Verbose:$script:Verbose;
       # this is used to add an exception to Windows Defender or other Anti-Virus,
       # because Windows Defender is annoying when it comes to Nuitka compiles
