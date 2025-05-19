@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict
 
 from loguru import logger
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QInputDialog
 from requests import post as requests_post
 from requests.exceptions import JSONDecodeError
 from steam.webapi import WebAPI
@@ -17,7 +18,7 @@ from app.utils.app_info import AppInfo
 from app.utils.constants import RIMWORLD_DLC_METADATA
 from app.utils.generic import chunks
 from app.utils.steam.steamworks.wrapper import SteamworksAppDependenciesQuery
-from app.views.dialogue import show_dialogue_input, show_warning
+from app.views.dialogue import show_warning
 
 # Prevent circular dependencies for type checking
 if TYPE_CHECKING:
@@ -56,9 +57,10 @@ class CollectionImport:
 
     def input_dialog(self) -> None:
         # Initialize the UI for entering collection links
-        self.link_input = show_dialogue_input(
+        self.link_input = QInputDialog().getText(
             title="Add Workshop collection link",
             label="Add Workshop collection link",
+            parent=self.metadata_manager.settings_controller.settings_dialog
         )
         logger.info("Workshop collection link Input UI initialized successfully!")
         if self.link_input[1]:

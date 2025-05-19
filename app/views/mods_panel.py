@@ -41,6 +41,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -77,7 +78,6 @@ from app.utils.metadata import MetadataManager, ModMetadata
 from app.views.deletion_menu import ModDeletionMenu
 from app.views.dialogue import (
     show_dialogue_conditional,
-    show_dialogue_input,
     show_information,
     show_warning,
 )
@@ -1403,10 +1403,11 @@ class ModListWidget(QListWidget):
                         )
                         return False
 
-                    args, ok = show_dialogue_input(
+                    args, ok = QInputDialog().getText(
                         title="Add comment",
                         label="Enter a comment providing your reasoning for wanting to blacklist this mod: "
                         + f"{self.metadata_manager.external_steam_metadata.get(steamdb_add_blacklist, {}).get('steamName', steamdb_add_blacklist)}",
+                        parent=self,
                     )
                     if ok:
                         self.steamdb_blacklist_signal.emit(
@@ -2555,10 +2556,11 @@ class ModListWidget(QListWidget):
             )
             return False
 
-        args, ok = show_dialogue_input(
+        args, ok = QInputDialog().getText(
             title="Add comment",
             label="Enter a comment providing your reasoning for wanting to blacklist this mod: "
             + f'{self.metadata_manager.external_steam_metadata.get(steamdb_add_blacklist, {}).get("steamName", steamdb_add_blacklist)}',
+            parent=self,
         )
         if ok:
             self.steamdb_blacklist_signal.emit(

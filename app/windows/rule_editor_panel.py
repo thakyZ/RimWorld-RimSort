@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QHeaderView,
+    QInputDialog,
     QItemDelegate,
     QLabel,
     QLineEdit,
@@ -32,7 +33,7 @@ from PySide6.QtWidgets import (
 
 from app.utils.app_info import AppInfo
 from app.utils.metadata import MetadataManager
-from app.views.dialogue import show_dialogue_input, show_warning
+from app.views.dialogue import show_warning
 
 
 class EditableDelegate(QItemDelegate):
@@ -565,10 +566,11 @@ class RuleEditor(QWidget):
                 destination_list.addItem(copied_item)
                 destination_list.setItemWidget(copied_item, QLabel(item_label_text))
                 # Add a new row in the editor - prompt user to enter a comment for their rule addition
-                args, ok = show_dialogue_input(
+                args, ok = QInputDialog().getText(
                     title="Enter comment",
                     label="""Enter a comment to annotate why this rule exists.
-                      This is useful for your own records, as well as others.""",
+                        This is useful for your own records, as well as others.""",
+                    parent=self
                 )
                 if ok:
                     comment = args
@@ -1022,7 +1024,7 @@ class RuleEditor(QWidget):
                 comment = ""
                 if not self.block_comment_prompt:
                     # Add a new row in the editor - prompt user to enter a comment for their rule addition
-                    args, ok = show_dialogue_input(
+                    args, ok = QInputDialog().getText(
                         title="Enter comment",
                         label="Enter a comment to annotate why this rule exists."
                         "This is useful for your own records, as well as others.",
@@ -1085,7 +1087,7 @@ class RuleEditor(QWidget):
         Returns:
             str: The comment entered by the user if dialogue is accepted, otherwise an empty string.
         """
-        item, ok = show_dialogue_input(
+        item, ok = QInputDialog().getText(
             title="Enter comment",
             label="Enter a comment to annotate why this rule exists."
             " This is useful for your own records, as well as others.",

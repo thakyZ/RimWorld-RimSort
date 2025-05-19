@@ -11,6 +11,7 @@ from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QMainWindow,
     QPushButton,
@@ -39,7 +40,6 @@ from app.views.dialogue import (
     BinaryChoiceDialog,
     show_dialogue_conditional,
     show_dialogue_file,
-    show_dialogue_input,
     show_fatal_error,
     show_warning,
 )
@@ -291,7 +291,7 @@ class MainWindow(QMainWindow):
             diag = BinaryChoiceDialog(
                 title="Steam Client Integration",
                 text="<h3>Would you like to enable Steam Client Integration for this instance?</h3>",
-                information="""This will allow you to use RimSort features that require the Steam Client. This includes, among other things, unsubscribing from workshop mods and opening workshop links via the Steam Client. 
+                information="""This will allow you to use RimSort features that require the Steam Client. This includes, among other things, unsubscribing from workshop mods and opening workshop links via the Steam Client.
                 <br><br>
                 You can change this in the settings under the Advanced tab.""",
                 negative_text="No",
@@ -303,17 +303,19 @@ class MainWindow(QMainWindow):
         return
 
     def __ask_for_new_instance_name(self) -> str | None:
-        instance_name, ok = show_dialogue_input(
+        instance_name, ok = QInputDialog().getText(
             title="Create new instance",
             label="Input a unique name of new instance that is not already used:",
+            parent=self,
         )
         return instance_name.strip() if ok else None
 
     def __ask_for_non_default_instance_name(self) -> str | None:
         while True:
-            instance_name, ok = show_dialogue_input(
+            instance_name, ok = QInputDialog().getText(
                 title="Provide instance name",
                 label='Input a unique name for the backed up instance that is not "Default"',
+                parent=self,
             )
             if ok and instance_name.lower() != "default":
                 return instance_name
