@@ -58,9 +58,9 @@ class CollectionImport:
     def input_dialog(self) -> None:
         # Initialize the UI for entering collection links
         self.link_input = QInputDialog().getText(
-            title="Add Workshop collection link",
-            label="Add Workshop collection link",
-            parent=self.metadata_manager.settings_controller.settings_dialog
+            None, # type: ignore # Is okay to set parent to None
+            "Add Workshop collection link",
+            "Add Workshop collection link",
         )
         logger.info("Workshop collection link Input UI initialized successfully!")
         if self.link_input[1]:

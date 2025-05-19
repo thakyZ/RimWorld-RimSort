@@ -2317,9 +2317,9 @@ class MainContent(QObject):
         that are configured to be passed to the Rimworld executable
         """
         args, ok = QInputDialog().getText(
-            title="Enter git repo",
-            label="Enter a git repository url (http/https) to clone to local mods:",
-            parent=self.settings_controller.settings_dialog,
+            None, # type: ignore # Is okay to set parent to None
+            "Enter git repo",
+            "Enter a git repository url (http/https) to clone to local mods:",
         )
         if ok:
             self._do_clone_repo_to_path(
@@ -2340,10 +2340,10 @@ class MainContent(QObject):
         "Github mod" related actions
         """
         args, ok = QInputDialog().getText(
-            title="Edit username",
-            label="Enter your Github username:",
+            None, # type: ignore # Is okay to set parent to None
+            "Edit username",
+            "Enter your Github username:",
             text=self.settings_controller.settings.github_username,
-            parent=self.settings_controller.settings_dialog,
         )
         if ok:
             self.settings_controller.settings.github_username = args
@@ -2352,10 +2352,10 @@ class MainContent(QObject):
             logger.debug("USER ACTION: cancelled input!")
             return
         args, ok = QInputDialog().getText(
-            title="Edit token",
-            label="Enter your Github personal access token here (ghp_*):",
+            None, # type: ignore # Is okay to set parent to None
+            "Edit token",
+            "Enter your Github personal access token here (ghp_*):",
             text=self.settings_controller.settings.github_token,
-            parent=self.settings_controller.settings_dialog,
         )
         if ok:
             self.settings_controller.settings.github_token = args
@@ -2906,10 +2906,10 @@ class MainContent(QObject):
         This URL is used for Steam DB repo related actions.
         """
         args, ok = QInputDialog().getText(
-            title="Edit Steam DB repo",
-            label="Enter URL (https://github.com/AccountName/RepositoryName):",
+            None, # type: ignore # Is okay to set parent to None
+            "Edit Steam DB repo",
+            "Enter URL (https://github.com/AccountName/RepositoryName):",
             text=self.settings_controller.settings.external_steam_metadata_repo,
-            parent=self.settings_controller.settings_dialog,
         )
         if ok:
             self.settings_controller.settings.external_steam_metadata_repo = args
@@ -2921,10 +2921,10 @@ class MainContent(QObject):
         DB repo. This URL is used for Steam DB repo related actions.
         """
         args, ok = QInputDialog().getText(
-            title="Edit Community Rules DB repo",
-            label="Enter URL (https://github.com/AccountName/RepositoryName):",
+            None, # type: ignore # Is okay to set parent to None
+            "Edit Community Rules DB repo",
+            "Enter URL (https://github.com/AccountName/RepositoryName):",
             text=self.settings_controller.settings.external_community_rules_repo,
-            parent=self.settings_controller.settings_dialog,
         )
         if ok:
             self.settings_controller.settings.external_community_rules_repo = args
@@ -3128,10 +3128,10 @@ class MainContent(QObject):
         the Steam Workshop metadata needed for sorting
         """
         args, ok = QInputDialog().getText(
-            title="Edit Steam WebAPI key",
-            label="Enter your personal 32 character Steam WebAPI key here:",
+            None, # type: ignore # Is okay to set parent to None
+            "Edit Steam WebAPI key",
+            "Enter your personal 32 character Steam WebAPI key here:",
             text=self.settings_controller.settings.steam_apikey,
-            parent=self.settings_controller.settings_dialog,
         )
         if ok:
             self.settings_controller.settings.steam_apikey = args
@@ -3394,10 +3394,10 @@ class MainContent(QObject):
         WebAPI Query Expiry (in seconds)
         """
         args, ok = QInputDialog().getText(
-            title="Edit SteamDB expiry:",
-            label="Enter your preferred expiry duration in seconds (default 1 week/604800 sec):",
+            None, # type: ignore # Is okay to set parent to None
+            "Edit SteamDB expiry:",
+            "Enter your preferred expiry duration in seconds (default 1 week/604800 sec):",
             text=str(self.settings_controller.settings.database_expiry),
-            parent=self.settings_controller.settings_dialog,
         )
         if ok:
             try:

@@ -567,10 +567,10 @@ class RuleEditor(QWidget):
                 destination_list.setItemWidget(copied_item, QLabel(item_label_text))
                 # Add a new row in the editor - prompt user to enter a comment for their rule addition
                 args, ok = QInputDialog().getText(
-                    title="Enter comment",
-                    label="""Enter a comment to annotate why this rule exists.
-                        This is useful for your own records, as well as others.""",
-                    parent=self
+                    self,
+                    "Enter comment",
+                    """Enter a comment to annotate why this rule exists.
+                       This is useful for your own records, as well as others.""",
                 )
                 if ok:
                     comment = args
@@ -1025,10 +1025,10 @@ class RuleEditor(QWidget):
                 if not self.block_comment_prompt:
                     # Add a new row in the editor - prompt user to enter a comment for their rule addition
                     args, ok = QInputDialog().getText(
-                        title="Enter comment",
-                        label="Enter a comment to annotate why this rule exists."
+                        self,
+                        "Enter comment",
+                        "Enter a comment to annotate why this rule exists."
                         "This is useful for your own records, as well as others.",
-                        parent=self,
                     )
                     if ok:
                         comment = args
@@ -1088,10 +1088,10 @@ class RuleEditor(QWidget):
             str: The comment entered by the user if dialogue is accepted, otherwise an empty string.
         """
         item, ok = QInputDialog().getText(
-            title="Enter comment",
-            label="Enter a comment to annotate why this rule exists."
+            self,
+            "Enter comment",
+            "Enter a comment to annotate why this rule exists."
             " This is useful for your own records, as well as others.",
-            parent=self,
         )
         if ok:
             return item

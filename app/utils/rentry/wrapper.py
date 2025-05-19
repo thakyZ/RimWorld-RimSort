@@ -171,9 +171,9 @@ class RentryImport:
     def input_dialog(self) -> None:
         """Initialize the UI for entering Rentry.co links."""
         self.link_input = QInputDialog().getText(
-            title="Enter Rentry.co link",
-            label="Enter the Rentry.co link:",
-            parent=self.settings_controller.settings_dialog,
+            None, # type: ignore # Is okay to set parent to None
+            "Enter Rentry.co link",
+            "Enter the Rentry.co link:",
         )
         logger.info("Rentry link Input UI initialized successfully!")
         if self.link_input[1]:

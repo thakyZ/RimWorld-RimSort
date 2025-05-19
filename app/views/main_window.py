@@ -304,18 +304,18 @@ class MainWindow(QMainWindow):
 
     def __ask_for_new_instance_name(self) -> str | None:
         instance_name, ok = QInputDialog().getText(
-            title="Create new instance",
-            label="Input a unique name of new instance that is not already used:",
-            parent=self,
+            self,
+            "Create new instance",
+            "Input a unique name of new instance that is not already used:",
         )
         return instance_name.strip() if ok else None
 
     def __ask_for_non_default_instance_name(self) -> str | None:
         while True:
             instance_name, ok = QInputDialog().getText(
-                title="Provide instance name",
-                label='Input a unique name for the backed up instance that is not "Default"',
-                parent=self,
+                self,
+                "Provide instance name",
+                'Input a unique name for the backed up instance that is not "Default"',
             )
             if ok and instance_name.lower() != "default":
                 return instance_name

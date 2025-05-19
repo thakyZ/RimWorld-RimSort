@@ -1404,10 +1404,10 @@ class ModListWidget(QListWidget):
                         return False
 
                     args, ok = QInputDialog().getText(
-                        title="Add comment",
-                        label="Enter a comment providing your reasoning for wanting to blacklist this mod: "
+                        self,
+                        "Add comment",
+                        "Enter a comment providing your reasoning for wanting to blacklist this mod: "
                         + f"{self.metadata_manager.external_steam_metadata.get(steamdb_add_blacklist, {}).get('steamName', steamdb_add_blacklist)}",
-                        parent=self,
                     )
                     if ok:
                         self.steamdb_blacklist_signal.emit(
@@ -2557,10 +2557,10 @@ class ModListWidget(QListWidget):
             return False
 
         args, ok = QInputDialog().getText(
-            title="Add comment",
-            label="Enter a comment providing your reasoning for wanting to blacklist this mod: "
+            self,
+            "Add comment",
+            "Enter a comment providing your reasoning for wanting to blacklist this mod: "
             + f'{self.metadata_manager.external_steam_metadata.get(steamdb_add_blacklist, {}).get("steamName", steamdb_add_blacklist)}',
-            parent=self,
         )
         if ok:
             self.steamdb_blacklist_signal.emit(
