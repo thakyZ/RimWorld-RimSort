@@ -216,7 +216,7 @@ class FileSearchDialog(QDialog):
         self.stop_button = QPushButton("Stop")
         self.stop_button.setMinimumWidth(100)
         self.stop_button.setEnabled(False)
-        self.stop_button.setStyleSheet("font-weight: bold; background-color: normal;")
+        self.stop_button.setStyleSheet("font-weight: bold; background-color: transparent;")
 
         buttons_layout.addWidget(self.search_button)
         buttons_layout.addWidget(self.stop_button)

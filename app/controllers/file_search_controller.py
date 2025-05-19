@@ -824,7 +824,7 @@ class FileSearchController(QObject):
         self._on_search_start()
         self.dialog.search_button.setEnabled(False)
         self.dialog.search_button.setStyleSheet(
-            "font-weight: bold; background-color: nornal;"
+            "font-weight: bold; background-color: transparent;"
         )
         self.dialog.stop_button.setEnabled(True)
         self.dialog.stop_button.setStyleSheet(
@@ -1103,7 +1103,7 @@ class FileSearchController(QObject):
         )
         self.dialog.stop_button.setEnabled(False)
         self.dialog.stop_button.setStyleSheet(
-            "font-weight: bold; background-color: normal;"
+            "font-weight: bold; background-color: transparent;"
         )
 
     def _on_search_error(self, error_msg: str) -> None:
