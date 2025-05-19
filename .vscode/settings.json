@@ -59,7 +59,6 @@
     "todds",
     "virtualenv"
   ],
-  "mypy.runUsingActiveInterpreter": true,
   "python.terminal.activateEnvInCurrentTerminal": true,
   "python.terminal.activateEnvironment": true,
   "python.testing.pytestArgs": [
