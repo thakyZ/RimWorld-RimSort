@@ -5,6 +5,8 @@ from PySide6.QtCore import QMargins
 from PySide6.QtGui import QFont, QFontMetrics, QPixmap
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
+from app.utils.app_info import AppInfo
+
 
 class GUIInfo:
     """
@@ -58,7 +60,7 @@ class GUIInfo:
 
         self._is_initialized: bool = True
 
-        icon_path = "themes/default-icons/AppIcon_alt.ico"
+        icon_path = AppInfo().theme_data_folder / "default-icons" / "AppIcon_alt.ico"
         if Path(icon_path).exists():
             self._app_icon = QPixmap(icon_path)
         else:
