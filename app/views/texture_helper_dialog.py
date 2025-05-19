@@ -510,7 +510,9 @@ class TextureHelperDialog(QDialog):
 
     def _set_color_to_row(self, row_index: int, color: QColor) -> None:
         for i in range(self.results_table.columnCount()):
-            self.results_table.item(row_index, i).setBackground(color)
+            table_item = self.results_table.item(row_index, i)
+            if table_item:
+                table_item.setBackground(color)
 
     def clear_results(self) -> None:
         """clear all results from the table"""
