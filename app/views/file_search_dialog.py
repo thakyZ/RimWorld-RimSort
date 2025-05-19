@@ -500,7 +500,7 @@ class FileSearchDialog(QDialog):
             # Fallback to default opener
             self._open_file(path)
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:  # type: ignore ### reportIncompatibleMethodOverride
         """Handle keyboard shortcuts"""
         # Get currently selected row
         selected_rows = self.results_table.selectedItems()

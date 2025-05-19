@@ -743,7 +743,7 @@ class SettingsFailureDialog(QDialog):
         self.reset_settings_btn.clicked.connect(lambda: _reset_settings_file())
         self.close_application_btn.clicked.connect(lambda: sys.exit())
 
-    def closeEvent(self, event: QEvent) -> None:
+    def closeEvent(self, event: QEvent) -> None:  # type: ignore ### reportIncompatibleMethodOverride
         sys.exit()
 
 
