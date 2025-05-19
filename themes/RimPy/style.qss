@@ -223,6 +223,14 @@ QProgressBar {
     color: #e6edf3;
     text-align: center;
 }
+QProgressBar::chunk:first {
+    border-top-left-radius: 5px;
+    border-buttom-left-radius: 5px;
+}
+QProgressBar::chunk:last {
+    border-top-right-radius: 5px;
+    border-buttom-right-radius: 5px;
+}
 QProgressBar::chunk#default {
     background-color: #60798b;
     width: 10px;

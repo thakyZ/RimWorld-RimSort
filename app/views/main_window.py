@@ -27,6 +27,7 @@ from app.controllers.instance_controller import (
 from app.controllers.menu_bar_controller import MenuBarController
 from app.controllers.mods_panel_controller import ModsPanelController
 from app.controllers.settings_controller import SettingsController
+from app.controllers.texture_helper_controller import TextureHelperController
 from app.controllers.troubleshooting_controller import TroubleshootingController
 from app.utils.app_info import AppInfo
 from app.utils.event_bus import EventBus
@@ -47,6 +48,7 @@ from app.views.log_reader import LogReader
 from app.views.main_content_panel import MainContent
 from app.views.menu_bar import MenuBar
 from app.views.status_panel import Status
+from app.views.texture_helper_dialog import TextureHelperDialog
 from app.views.troubleshooting_dialog import TroubleshootingDialog
 
 
@@ -166,6 +168,20 @@ class MainWindow(QMainWindow):
         self.file_search_layout.addWidget(self.file_search_dialog)
 
         self.tab_widget.addTab(self.file_search_tab, "File Search")
+
+        self.texture_helper_tab = QWidget()
+        self.texture_helper_layout = QVBoxLayout()
+        self.texture_helper_tab.setLayout(self.texture_helper_layout)
+
+        self.texture_helper_dialog = TextureHelperDialog()
+        self.texture_helper_controller = TextureHelperController(
+            settings=self.settings_controller.settings,
+            settings_controller=self.settings_controller,
+            dialog=self.texture_helper_dialog,
+        )
+        self.texture_helper_layout.addWidget(self.texture_helper_dialog)
+
+        self.tab_widget.addTab(self.texture_helper_tab, "Texture Helper")
 
         # Create and add the Troubleshooting tab
         self.troubleshooting_tab = QWidget()
