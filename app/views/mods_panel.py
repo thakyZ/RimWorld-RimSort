@@ -1478,12 +1478,13 @@ class ModListWidget(QListWidget):
                     if answer == "&Yes":
                         self.delete_dds_textures_only(selected_items, steamcmd_acf_pfid_purge)
                     return True
+                new_color: QColor | None = None
                 # If user is changing mod color, display color picker once no matter how many mods are selected
                 if action == change_mod_color_action:
                     new_color = QColorDialog().getColor()
                 # Execute action for each selected mod
                 for source_item in selected_items:
-                    if type(source_item) is CustomListWidgetItem:
+                    if type(source_item) is CustomListWidgetItem and new_color:
                         item_data = source_item.data(Qt.ItemDataRole.UserRole)
                         uuid = item_data["uuid"]
                         # Retrieve metadata
