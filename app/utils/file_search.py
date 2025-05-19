@@ -48,11 +48,91 @@ class FileSearch:
         search_options["preview"] = True
         search_options["return_dict"] = True
 
-        for result in self._generic_search(
-            search_text, root_paths, search_options, result_callback
-        ):
-            if isinstance(result, dict):
-                yield result
+        if options.get("simple", False):
+            for result in self._simple_search(
+                search_text, root_paths, search_options, result_callback
+            ):
+                if isinstance(result, dict):
+                    yield result
+        else:
+            for result in self._generic_search(
+                search_text, root_paths, search_options, result_callback
+            ):
+                if isinstance(result, dict):
+                    yield result
+
+    def _simple_search(
+        self,
+        search_text: str,
+        root_paths: list[str],
+        options: dict[str, Any],
+        result_callback: Optional[Callable[..., None]] = None,
+    ) -> Generator[dict[str, str] | Tuple[str, str, str], None, None]:
+        """
+        Generic search method that handles all search types.
+
+        Args:
+            search_text (str): The text to search for.
+            root_paths (List[str]): List of root directories to search in.
+            options (Dict[str, Any]): Search options including:
+                - file_extensions (List[str]): File extensions to include
+                - ignore_extensions (List[str]): File extensions to ignore
+                - case_sensitive (bool): Whether the search is case-sensitive
+                - use_regex (bool): Whether to use regex for matching
+                - preview (bool): Whether to include a preview of the match
+                - return_dict (bool): Whether to return a dictionary or tuple
+            result_callback (Optional[Callable]): Callback for each result.
+
+        Yields:
+            Dict or Tuple depending on return_dict flag.
+        """
+        file_extensions: list[str] = ["png"]
+        ignore_extensions: list[str] = []
+        return_dict = options.get("return_dict", False)
+
+        for root_path in root_paths:
+            for dirpath, _, filenames in os.walk(root_path):
+                if self.stop_requested:
+                    logger.info("Search stopped by user.")
+                    return
+
+                for filename in filenames:
+                    # Skip files with ignored extensions
+                    if any(filename.endswith(ext) for ext in ignore_extensions):
+                        continue
+
+                    # Only process files with specified extensions if provided
+                    if file_extensions and not any(
+                        filename.lower().endswith(ext.lower())
+                        for ext in file_extensions
+                    ):
+                        continue
+
+                    file_path = os.path.join(dirpath, filename)
+                    try:
+                        if return_dict:
+                            result: dict[str, str] | Tuple[str, str, str] = {
+                                "file_path": file_path
+                            }
+                        else:
+                            # Extract pfid (publishedfileid) from file_path or root_path
+                            pfid = os.path.basename(root_path)
+                            mod_name = get_mod_name_from_pfid(pfid)
+                            result = (
+                                mod_name,
+                                filename,
+                                file_path,
+                            )
+                        if result_callback:
+                            if isinstance(result, dict):
+                                result_callback(*result.values())
+                            elif isinstance(result, tuple):
+                                result_callback(*result)
+                            else:
+                                result_callback(result)
+                        yield result
+                    except Exception as e:
+                        logger.error(f"Error reading file {file_path}: {e}")
 
     def _generic_search(
         self,
