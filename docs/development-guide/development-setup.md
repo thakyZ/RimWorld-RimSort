@@ -16,7 +16,7 @@ permalink: development-guide/development-setup
 
 ### Introduction
 
-RimSort is built in Python using the [PySide6](https://pypi.org/project/PySide6/) module, as well as several others. Some modules require special care in order to be built. It is compiled and packaged using [Nuikta](https://nuitka.net/).
+RimSort is built in Python using the [PySide6](https://pypi.org/project/PySide6/) module, as well as several others. Some modules require special care in order to be built. It is compiled and packaged using [Nuitka](https://nuitka.net/).
 
 ## Cloning the repository
 

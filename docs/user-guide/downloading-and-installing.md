@@ -34,7 +34,7 @@ Windows
 {: .important }
 > On Windows, the executable RimSort.exe may sometimes be incorrectly flagged by your anti-virus solution such as Windows Defender and deleted.
 >
-> Unfortunately this is a side effect of using [Nuikta](https://nuitka.net/) to compile a Python program into an easy to distribute executable, and not signing it. Signing the release costs a significant amount of money and is a re-occuring cost which is infeasible for us. It is safe to override your anti-virus to allow RimSort. If you are unsure about this, feel free to scan the executable using [Virus Total](https://www.virustotal.com/gui/) which will give you the opinion of multiple anti-virus solutions and then form your own opinion.
+> Unfortunately this is a side effect of using [Nuitka](https://nuitka.net/) to compile a Python program into an easy to distribute executable, and not signing it. Signing the release costs a significant amount of money and is a re-occuring cost which is infeasible for us. It is safe to override your anti-virus to allow RimSort. If you are unsure about this, feel free to scan the executable using [Virus Total](https://www.virustotal.com/gui/) which will give you the opinion of multiple anti-virus solutions and then form your own opinion.
 
 
 

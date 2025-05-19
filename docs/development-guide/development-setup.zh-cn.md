@@ -17,7 +17,7 @@ lang: zh-cn
 
 ## 简介
 
-RimSort 使用 [PySide6](https://pypi.org/project/PySide6/) 模块以及多个其他 Python 模块构建，部分模块需要特殊处理才能正确被编译。最终，使用 [Nuikta](https://nuitka.net/) 进行打包。
+RimSort 使用 [PySide6](https://pypi.org/project/PySide6/) 模块以及多个其他 Python 模块构建，部分模块需要特殊处理才能正确被编译。最终，使用 [Nuitka](https://nuitka.net/) 进行打包。
 
 ## 克隆仓库
 

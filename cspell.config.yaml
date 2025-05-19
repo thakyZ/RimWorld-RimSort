@@ -1,4 +1,3 @@
----
 $schema: https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json
 version: "0.2"
 name: Neko Boi Nick's cSpell config
@@ -27,24 +26,42 @@ dictionaries:
   - fonts
   - filetypes
 words:
+  - ACFAppWorkshop
+  - aoba  # Name of a mod developer
   - ApiKey
   - AppWorkshop
-  - brrainz # A mod developer
-  - Cascadia
-  - CreationFlags
+  - aseprite  # A name of a common image editing softwar2e
+  - brrainz  # Name of a mod developer
+  - BuildID
+  - Cascadia  # A name of a font
   - CPython
+  - CreationFlags
   - DatabaseBuilder
+  - Datas
+  - DBBuilder  # Short for database builder
+  - DescriptionByVersion
+  - DescriptionsByVersion
+  - dmypy  # Short for MyPy daemon
   - DocStrings
+  - Encapsulator
+  - Eustace  # Name of a developer
   - EventBus
+  - ExceptHook
+  - FollowLinks
   - ForceLoadAfter
   - ForceLoadBefore
   - GameVersion
+  - gedit  # Name of a common text editor
   - GitPython
+  - Hettiger  # Name of a developer
+  - IncludeKVTags
   - IncompatibleWith
   - IncompatibleWithByVersion
+  - IPublishedFileService
   - ISort
-  - joseasoler # The developer for Todds
-  - krkr # A mod developer
+  - joseasoler  # The developer for Todds
+  - krkr  # Name of a mod developer
+  - Linq  # A common .NET namespace name.
   - LoadAfter
   - LoadAfterByVersion
   - LoadBefore
@@ -54,91 +71,80 @@ words:
   - ModDependenciesByVersion
   - ModMetadata
   - ModName
+  - MSVC
+  - MSVS
+  - MSYS2
   - NatSort
   - NatSorted
   - ncipollo
+  - NoFilter
+  - NoInclude
+  - NoKey
   - NoRecurseDirs
+  - Nuitka
+  - OnExc
+  - oset  # Short for ordered set
+  - PackageId
   - pfid
   - pfids
   - PlayerFaction
   - PsUtil
   - PublishedFileID
   - PublishedFileIDs
+  - PyEnv
+  - PyPa
+  - PySide
   - pysqlite
+  - pyvenv
+  - pygtk
+  - PyTestQt
+  - QLabels
+  - QObject
+  - QtBot
+  - QtWebEngine
+  - Redist
   - Redistributables
   - Rentry
+  - Repolish
+  - Repolishing
   - RimSort
   - SaveDataFolder
   - SavedScenario
   - ScanDir
-  - ShFmt
+  - Scons
+  - shfmt  # A common Python package
+  - Sodipodi
   - SteamApps
   - SteamCMD
   - SteamDB
+  - SteamWorks
   - Subfolders
   - SupportedVersions
+  - taranchuk
   - TargetVersion
   - TimeTouched
   - TimeUpdated
-  - Topo
   - Todds
-  - QtWebEngine
+  - TopDown
+  - Topo
+  - TopoLevels
   - TopoSort
+  - Unhighlighting
+  - Universum
   - Unpolish
+  - Unposted
   - VirtualEnv
   - WebAPI
-  - Nuitka
-  - Zetrith # A mod developer
-  - aoba # A mod developer
-  - QLabels
-  - QObject
-  - OnExc # Short for on execute
-  - Datas
-  - ACFAppWorkshop
-  - IncludeKVTags
-  - Unposted
-  - Repolish
-  - TopoLevels
-  - Repolishing
-  - Eustace # Name of the developer
-  - BuildID
-  - Unhighlighting
-  - PyEnv
-  - DMyPy # The MyPy daemon
-  - PyPa
-  - SteamWorks
-  - NoKey
-  - NoFilter
-  - Linq
-  - Scons
-  - MSYS2
-  - MSVC
-  - NoInclude
-  - Neko
-  - Redist # Short for redistributables
-  - Nuikta
-  - DescriptionsByVersion
-  - DescriptionByVersion
-  - PySide
-  - ExceptHook
-  - TopDown
-  - FollowLinks
-  - PackageId
-  - Universum # Name of a mod
-  - taranchuk # Name of a mod author
-  - PyTestQt
-  - QtBot
-  - DBBuilder # Short for Database Builder
-  - IPublishedFileService
-  - Sodipodi
-  - Encapsulator
+  - Zetrith  # Name of a mod feveloepr
 ignoreRegExpList:
   - (?<=`)n\w+
-  - (?<=-?-)\w+(?=-\w+)? # Matches any CLI arguments.
+  - (?<=-?-)\w+(?=-\w+)?
   - (?<=\.)icns
   - (?<=.)ipynb(?=_checkpoints)
   - ltex(?=\.dictionary\*)
-  - (?<=:)rtype(?=:) # Short for return type
+  - (?<=:)rtype(?=:)
+  - \bNeko(?= ?Boi ?Nick\b)|(?<=\bNeko ?)Boi(?= ?Nick\b)
+  - (?<=(?<!\\)\])\w+
 ignoreWords:
   - ccache
   - forgor # A silly wod (personal preference)
