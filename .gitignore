@@ -191,3 +191,7 @@ ltex.dictionary*
 
 # cSpell
 cspell.report.json
+
+# PyLint
+pylint-report.txt
+.pylintrc
