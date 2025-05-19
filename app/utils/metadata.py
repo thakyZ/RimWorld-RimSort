@@ -1713,8 +1713,11 @@ class ModParser(QRunnable):
                                 ):
                                     mod_metadata["packageid"] = potential_packageid
                                     break
-                        # Normalize package ID in metadata
-                        mod_metadata["packageid"] = mod_metadata["packageid"].lower()
+                        if isinstance(mod_metadata["packageid"], str):
+                            # Normalize package ID in metadata
+                            mod_metadata["packageid"] = mod_metadata["packageid"].lower()
+                        else:
+                            logger.warning("Mod Metadata key \"packageid\" was not found to be a string")
                     else:  # ...otherwise, we don't have one from About.xml, and we can check Steam DB...
                         # ...this can be needed if a mod depends on a RW generated packageid via built-in hashing mechanism.
                         if (
