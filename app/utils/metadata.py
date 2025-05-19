@@ -631,6 +631,7 @@ class MetadataManager(QObject):
         # Compile metadata for all mods if uuids is None
         uuids = uuids or list(self.internal_local_metadata.keys())
         logger.info(f"Started compiling metadata for {len(uuids)} mods")
+        dependencies = None
 
         # Add dependencies to installed mods based on dependencies listed in About.xml TODO manifest.xml
         logger.info("Started compiling metadata from About.xml")
@@ -1524,8 +1525,11 @@ class ModParser(QRunnable):
                 break
         # Look for a case-insensitive "About.xml" file
         invalid_about_file_path_found = True
+        about_file_name = "About.xml"
+        scenario_rsc_found = False
+        scenario_rsc_file: str | None = None
+        scenario_metadata: dict[str, Any] = {}
         if not invalid_about_folder_path_found:
-            about_file_name = "About.xml"
             for temp_file in os.scandir(str((directory_path / about_folder_name))):
                 if (
                     temp_file.name.lower() == about_file_name.lower()
@@ -1536,7 +1540,6 @@ class ModParser(QRunnable):
                     break
         # Look for .rsc scenario files to load metadata from if we didn't find About.xml
         if invalid_about_file_path_found:
-            scenario_rsc_found = None
             for temp_file in os.scandir(mod_directory):
                 if temp_file.name.lower().endswith(".rsc") and not temp_file.is_dir():
                     scenario_rsc_file = temp_file.name
@@ -1838,8 +1841,8 @@ class ModParser(QRunnable):
                     )
                     data_malformed = True
         # ...or, if we didn't find an About.xml, but we have a RimWorld scenario .rsc to parse...
-        elif invalid_about_file_path_found and scenario_rsc_found:
-            scenario_data_path = str((directory_path / scenario_rsc_file))
+        elif invalid_about_file_path_found and scenario_rsc_found and scenario_rsc_file:
+            scenario_data_path = str(directory_path / scenario_rsc_file)
             logger.debug(f"Found scenario metadata at: {scenario_data_path}")
             scenario_data = {}
             try:
@@ -2618,6 +2621,7 @@ def check_if_pfids_blacklisted(
         return publishedfileids
     # Warn attempt of blacklisted mods
     blacklisted_mods = {}
+    publishedfileid: str | None = None
     for publishedfileid in publishedfileids:
         if steamdb.get(publishedfileid, {}).get("blacklist"):
             blacklisted_mods[publishedfileid] = {
@@ -2650,7 +2654,7 @@ def check_if_pfids_blacklisted(
             ],
         )
         # Remove blacklisted mods from list if user wants to download them still
-        if "Download" in answer:
+        if "Download" in answer and publishedfileid:
             publishedfileids.remove(publishedfileid)
             logger.debug(
                 f"Skipping download of blacklisted Workshop mod: {publishedfileid}"
