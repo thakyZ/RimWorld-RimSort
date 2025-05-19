@@ -373,6 +373,7 @@ def get_latest_todds_release() -> None:
             "Skipping todds download. The resultant RimSort build will not include todds!"
         )
         return
+    browser_download_url: str | None = None
     # Try to find a valid release
     for asset in json_response["assets"]:
         if asset["name"] == target_archive:
@@ -383,22 +384,25 @@ def get_latest_todds_release() -> None:
         )
         return
 
-    # Try to download & extract todds release from browser_download_url
-    try:
-        print(f"Downloading & extracting todds release from: {browser_download_url}")
-        with ZipFile(BytesIO(handle_request(browser_download_url).content)) as zipobj:
-            zipobj.extractall(todds_path)
-        # Set executable permissions as ZipFile does not preserve this in the zip archive
-        todds_executable_path = os.path.join(todds_path, todds_executable_name)
-        if os.path.exists(todds_executable_path):
-            original_stat = os.stat(todds_executable_path)
-            os.chmod(todds_executable_path, original_stat.st_mode | S_IEXEC)
-    except Exception as e:
-        print(f"Failed to download: {browser_download_url}")
-        print(
-            "Did the file/url change?\nDoes your environment have access to the Internet?"
-        )
-        print(f"Error: {e}")
+    if browser_download_url:
+        # Try to download & extract todds release from browser_download_url
+        try:
+            print(f"Downloading & extracting todds release from: {browser_download_url}")
+            with ZipFile(BytesIO(handle_request(browser_download_url).content)) as zipobj:
+                zipobj.extractall(todds_path)
+            # Set executable permissions as ZipFile does not preserve this in the zip archive
+            todds_executable_path = os.path.join(todds_path, todds_executable_name)
+            if os.path.exists(todds_executable_path):
+                original_stat = os.stat(todds_executable_path)
+                os.chmod(todds_executable_path, original_stat.st_mode | S_IEXEC)
+        except Exception as e:
+            print(f"Failed to download: {browser_download_url}")
+            print(
+                "Did the file/url change?\nDoes your environment have access to the Internet?"
+            )
+            print(f"Error: {e}")
+    else:
+        print("Failed to get the browser download url for todds")
 
 
 def freeze_application() -> None:
