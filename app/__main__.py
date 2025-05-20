@@ -8,8 +8,6 @@
 # nuitka-project: --include-package=steamworks
 # nuitka-project: --user-package-configuration-file={MAIN_DIRECTORY}/../rimsort.nuitka-package.config.yml
 # nuitka-project: --include-data-file={MAIN_DIRECTORY}/../steam_appid.txt=steam_appid.txt
-# nuitka-project: --windows-icon-from-ico={MAIN_DIRECTORY}/../themes/default-icons/AppIcon_alt.ico
-# nuitka-project: --onefile-temp-dir-spec={CACHE_DIR}/{PRODUCT}/cache
 
 # The PySide6 plugin covers qt-plugins
 # nuitka-project: --enable-plugin=pyside6
@@ -18,11 +16,12 @@
 # nuitka-project-if: {OS} == "Darwin":
 #   nuitka-project: --mode=app
 #   nuitka-project: --macos-app-icon={MAIN_DIRECTORY}/../themes/default-icons/AppIcon_a.icns
-# nuitka-project-elif: {OS} == "Linux":
+# nuitka-project-if: {OS} == "Linux":
 #   nuitka-project: --mode=onefile
 #   nuitka-project: --linux-icon={MAIN_DIRECTORY}/../themes/default-icons/RimSort_Icon_64x64_alt.svg
-# nuitka-project-else:
+# nuitka-project-if: {OS} == "Windows":
 #   nuitka-project: --mode=onefile
+#   nuitka-project: --onefile-tempdir-spec={CACHE_DIR}/{PRODUCT}/cache
 #   nuitka-project: --windows-icon-from-ico={MAIN_DIRECTORY}/../themes/default-icons/AppIcon_alt.ico
 
 # nuitka-project-if: os.path.exists("{MAIN_DIRECTORY}/../version.xml"):
