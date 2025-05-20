@@ -18,6 +18,7 @@
 #   nuitka-project: --macos-app-icon={MAIN_DIRECTORY}/../themes/default-icons/AppIcon_a.icns
 # nuitka-project-if: {OS} == "Linux":
 #   nuitka-project: --mode=onefile
+#   nuitka-project: --onefile-tempdir-spec={CACHE_DIR}/{PRODUCT}/cache
 #   nuitka-project: --linux-icon={MAIN_DIRECTORY}/../themes/default-icons/RimSort_Icon_64x64_alt.svg
 # nuitka-project-if: {OS} == "Windows":
 #   nuitka-project: --mode=onefile
