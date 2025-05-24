@@ -102,7 +102,7 @@ Begin {
       If ($PSBoundParameters.ContainsKey('Pipe')) {
         If ($Raw.IsPresent) {
           If ($PSCmdlet.ShouldProcess("$($Pipe) | & `"$($Command.Source)`" $($Arguments -join ' ') | Out-Host", 'Start-Process')) {
-            $Pipe | & "$($Command.Source)" $Arguments | Out-Host;
+            @($Pipe | & "$($Command.Source)" $Arguments) | Out-Host;
           }
         } Else {
           If ($PSCmdlet.ShouldProcess("$($Pipe) | & `"$($Command.Source)`" $($Arguments -join ' ') 2>&1", 'Start-Process')) {
@@ -112,7 +112,7 @@ Begin {
       } Else {
         If ($Raw.IsPresent) {
           If ($PSCmdlet.ShouldProcess("& `"$($Command.Source)`" $($Arguments -join ' ') | Out-Host", 'Start-Process')) {
-            & "$($Command.Source)" $Arguments | Out-Host;
+            @(& "$($Command.Source)" $Arguments) | Out-Host;
           }
         } Else {
           If ($PSCmdlet.ShouldProcess("& `"$($Command.Source)`" $($Arguments -join ' ') 2>&1", 'Start-Process')) {
@@ -1898,7 +1898,7 @@ Begin {
                   HelpMessage = "Specify how the executable should be named. For extension modules there is no choice, also not for standalone mode and using it will be an error. This may include path information that needs to exist though. Defaults to '<program_name>' on this platform. .exe)")]
         [ValidateNotNullOrWhiteSpace()]
         [string]
-        $OutputFile = '<program_name>',
+        $OutputFile = $Null,
 
         ### Console handling ###
 
@@ -2749,22 +2749,22 @@ Begin {
     $FILENAME += $Arch;
     $env:FILENAME = "$FILENAME";
 
-    If ($IsWindows) {
-      $DataFiles.Add("$((Get-Item -LiteralPath './themes/default-icons/AppIcon_alt.ico').FullName)", 'icon.ico');
-    }
+    # If ($IsWindows) {
+    #   $DataFiles.Add("$((Get-Item -LiteralPath './themes/default-icons/AppIcon_alt.ico').FullName)", 'icon.ico');
+    # }
 
     [string] $OutExec = "RimSort";
 
-    If ($IsWIndows) {
+    If ($IsWindows) {
       $OutExec = "$($OutExec).exe";
     }
 
-    Invoke-NuitkaAction -SkipInstall:$SkipInstall -NuitkaVersion 'main' -ScriptName 'app/__main__.py' <#-Mode $Mode#> `
-      <#-FileDescription 'RimSort'#> -IncludeDataFiles $DataFiles -ProductVersion $SemVersion.Outputs.VersionTag `
+    Invoke-NuitkaAction -SkipInstall:$SkipInstall -NuitkaVersion 'main' -ScriptName 'app/__main__.py' -Mode $Mode `
+      -FileDescription 'RimSort' -IncludeDataFiles $DataFiles -ProductVersion $SemVersion.Outputs.VersionTag `
       -FileVersion $SemVersion.Outputs.VersionTag -MacOsAppVersion $SemVersion.Outputs.VersionTag `
       <#-WindowsIconFromIco './themes/default-icons/AppIcon_alt.ico' -LinuxIcon './themes/default-icons/RimSort_Icon_64x64_alt.svg'#> `
-      <#-MacOsAppIcon './themes/default-icons/AppIcon_a.icns' -WindowsConsoleMode 'disable'#> `
-      <#-OneFileTempDirSpec '{CACHE_DIR}/{PRODUCT}/cache' -OutputFile $OutExec#> `
+      <#-MacOsAppIcon './themes/default-icons/AppIcon_a.icns'#> -WindowsConsoleMode 'disable' `
+      -OneFileTempDirSpec '{CACHE_DIR}/{PRODUCT}/cache' <#-OutputFile $OutExec#> `
       <#-EnablePlugins @('pyside6') -FollowImports#> `
       -WhatIf:$script:WhatIf -Debug:$script:Debug -Verbose:$script:Verbose;
       # this is used to add an exception to Windows Defender or other Anti-Virus,
@@ -2964,10 +2964,10 @@ Begin {
           Begin {
             [PSCustomObject] $Output = [PSCustomObject]::new();
           } Process {
-            [FileSystemInfo[]] $FilesToUpload = (Get-ChildItem -Path $SearchPath);
+            [FileSystemInfo[]] $FilesToUpload = @(Get-ChildItem -Path $SearchPath);
 
             If ($IncludeHiddenFiles.IsPresent) {
-              $FilesToUpload = @(@($FilesToUpload) + @(Get-ChildItem -Path $SearchPath -Hidden));
+              $FilesToUpload = @($FilesToUpload + @(Get-ChildItem -Path $SearchPath -Hidden));
             }
 
             [DirectoryInfo] $RootDirectory = (Get-LongestCommonPrefix -Path $FilesToUpload);
