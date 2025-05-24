@@ -2,7 +2,7 @@ from functools import partial
 from typing import Any, Dict
 
 from loguru import logger
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QStandardItem
 from PySide6.QtWidgets import QMenu, QPushButton, QToolButton
 
@@ -30,7 +30,9 @@ class UseThisInsteadPanel(BaseModsPanel):
             object_name="useThisInsteadModsPanel",
             window_title=self.tr("RimSort - Replacements found for Workshop mods"),
             title_text=self.tr("There are replacements available for Workshop mods!"),
-            details_text=self.tr('\nThe following table displays Workshop mods with suggested replacements according to the "Use This Instead" database'),
+            details_text=self.tr(
+                '\nThe following table displays Workshop mods with suggested replacements according to the "Use This Instead" database'
+            ),
             additional_columns=[
                 self.tr("Original Mod Name"),
                 self.tr("Original Author"),
@@ -39,7 +41,6 @@ class UseThisInsteadPanel(BaseModsPanel):
                 self.tr("Replacement Author"),
                 self.tr("Replacement Workshop Page"),
             ],
-            minimum_size=QSize(1100, 600),
         )
 
         def __subscribe_cb(_: UseThisInsteadPanel) -> None:
@@ -52,7 +53,9 @@ class UseThisInsteadPanel(BaseModsPanel):
         self.editor_update_mods_button.clicked.connect(
             partial(self._update_mods_from_table, 6, "Steam", completed=__subscribe_cb)
         )
-        self.editor_update_all_button = QPushButton(self.tr("Subscribe all replacements"))
+        self.editor_update_all_button = QPushButton(
+            self.tr("Subscribe all replacements")
+        )
         self.editor_update_all_button.clicked.connect(
             partial(self._steamworks_cmd_for_all, 6, completed=__subscribe_cb)
         )
@@ -62,10 +65,10 @@ class UseThisInsteadPanel(BaseModsPanel):
 
         self.editor_tool_menu = QMenu(self.editor_tool_button)
 
-        refresh_mods_action = QAction("Refresh Mod List", self)
+        refresh_mods_action = QAction(self.tr("Refresh Mod List"), self)
         refresh_mods_action.triggered.connect(EventBus().do_refresh_mods_lists.emit)
 
-        refresh_table_action = QAction("Refresh Table", self)
+        refresh_table_action = QAction(self.tr("Refresh Table"), self)
         refresh_table_action.triggered.connect(self._populate_from_metadata)
 
         def __unsubscribe_cb(_: UseThisInsteadPanel) -> None:
@@ -74,7 +77,7 @@ class UseThisInsteadPanel(BaseModsPanel):
                 self.tr("Successfully unsubscribed to original mods"),
             )
 
-        unsub_action = QAction("Unsubscribe outdated", self)
+        unsub_action = QAction(self.tr("Unsubscribe outdated"), self)
         unsub_action.triggered.connect(
             partial(
                 self._update_mods_from_table,
@@ -84,7 +87,7 @@ class UseThisInsteadPanel(BaseModsPanel):
                 __unsubscribe_cb,
             )
         )
-        unsub_all_action = QAction("Unsubscribe all outdated", self)
+        unsub_all_action = QAction(self.tr("Unsubscribe all outdated"), self)
         unsub_all_action.triggered.connect(
             partial(self._steamworks_cmd_for_all, 3, "unsubscribe", __unsubscribe_cb)
         )
@@ -92,7 +95,7 @@ class UseThisInsteadPanel(BaseModsPanel):
         deletion_menu = ModDeletionMenu(
             lambda: self._run_for_selected_rows(self._retrieve_metadata_from_row),
             None,
-            "Delete Selected Original Mods...",
+            self.tr("Delete Selected Original Mods..."),
         )
 
         self.editor_tool_menu.addAction(refresh_mods_action)

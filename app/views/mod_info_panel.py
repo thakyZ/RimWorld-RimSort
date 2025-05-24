@@ -145,7 +145,8 @@ class ModInfo:
         self.description = DescriptionWidget()
         self.description_text = self.tr("Welcome to RimSort!")
         self.description.setText(
-            f'<br><br><br><center>{self.description_text}<h3></h3></center>', convert=False
+            f"<br><br><br><center>{self.description_text}<h3></h3></center>",
+            convert=False,
         )
         self.notes = QTextEdit()  # TODO: Custom QTextEdit to allow clickable hyperlinks?
         self.notes.setObjectName("userModNotes")
@@ -219,8 +220,8 @@ class ModInfo:
     @staticmethod
     def tr(text: str) -> str:
         from PySide6.QtCore import QCoreApplication
-        return QCoreApplication.translate("ModInfo", text)
 
+        return QCoreApplication.translate("ModInfo", text)
 
     def update_user_mod_notes(self) -> None:
         if self.current_mod_item is None:

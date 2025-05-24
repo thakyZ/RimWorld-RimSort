@@ -5,7 +5,7 @@ from functools import partial
 from typing import Any
 
 from loguru import logger
-from PySide6.QtCore import QPoint, QSize, Qt, QUrl, Signal
+from PySide6.QtCore import QPoint, Qt, QUrl, Signal
 from PySide6.QtGui import QAction, QPixmap
 from PySide6.QtWebEngineCore import QWebEnginePage
 from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 from app.models.image_label import ImageLabel
 from app.utils.app_info import AppInfo
 from app.utils.generic import check_if_steam_running, extract_page_title_steam_browser
+from app.utils.gui_info import GUIInfo
 from app.utils.metadata import MetadataManager
 from app.utils.steam.webapi.wrapper import (
     ISteamRemoteStorage_GetCollectionDetails,
@@ -95,13 +96,17 @@ class SteamBrowser(QWidget):
         self.clear_list_button = QPushButton(self.tr("Clear List"))
         self.clear_list_button.setObjectName("browserPanelClearList")
         self.clear_list_button.clicked.connect(self._clear_downloader_list)
-        self.download_steamcmd_button = QPushButton(self.tr("Download mod(s) (SteamCMD)"))
+        self.download_steamcmd_button = QPushButton(
+            self.tr("Download mod(s) (SteamCMD)")
+        )
         self.download_steamcmd_button.clicked.connect(
             partial(
                 self.steamcmd_downloader_signal.emit, self.downloader_list_mods_tracking
             )
         )
-        self.download_steamworks_button = QPushButton(self.tr("Download mod(s) (Steam app)"))
+        self.download_steamworks_button = QPushButton(
+            self.tr("Download mod(s) (Steam app)")
+        )
         self.download_steamworks_button.clicked.connect(
             self._subscribe_to_mods_from_list
         )
@@ -125,7 +130,7 @@ class SteamBrowser(QWidget):
         self.web_view.loadFinished.connect(self._web_view_load_finished)
         self.web_view.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.web_view.load(self.startpage)
-        
+
         #  QWebEngineProfile.defaultProfile().setHttpAcceptLanguages
 
         # Location box
@@ -176,7 +181,8 @@ class SteamBrowser(QWidget):
         # Put it all together
         self.setWindowTitle(self.current_title)
         self.setLayout(self.window_layout)
-        self.setMinimumSize(QSize(800, 600))
+        # Use GUIInfo to set the window size and position from settings
+        self.setGeometry(*GUIInfo().get_window_geometry())
 
     def __browse_to_location(self) -> None:
         url = QUrl(self.location.text())
@@ -195,7 +201,9 @@ class SteamBrowser(QWidget):
             )
             show_warning(
                 title=self.tr("No publishedfileid found"),
-                text=self.tr("Unable to parse publishedfileid from url, Please check if url is in the correct format"),
+                text=self.tr(
+                    "Unable to parse publishedfileid from url, Please check if url is in the correct format"
+                ),
                 information=f"Url: {self.current_url}",
             )
             return None
@@ -217,8 +225,13 @@ class SteamBrowser(QWidget):
                 answer = show_dialogue_conditional(
                     title=self.tr("Add Collection"),
                     text=self.tr("How would you like to add the collection?"),
-                    information=self.tr("You can choose to add all mods from the collection or only the ones you don't have installed."),
-                    button_text_override=[self.tr("Add All Mods"), self.tr("Add Missing Mods")],
+                    information=self.tr(
+                        "You can choose to add all mods from the collection or only the ones you don't have installed."
+                    ),
+                    button_text_override=[
+                        self.tr("Add All Mods"),
+                        self.tr("Add Missing Mods"),
+                    ],
                 )
 
                 if answer == self.tr("Add All Mods"):
@@ -236,8 +249,12 @@ class SteamBrowser(QWidget):
                 )
                 show_warning(
                     title=self.tr("SteamCMD downloader"),
-                    text=self.tr("Empty list of mods returned, unable to add collection to list!"),
-                    information=self.tr("Please reach out to us on Github Issues page or\n#rimsort-testing on the Rocketman/CAI discord"),
+                    text=self.tr(
+                        "Empty list of mods returned, unable to add collection to list!"
+                    ),
+                    information=self.tr(
+                        "Please reach out to us on Github Issues page or\n#rimsort-testing on the Rocketman/CAI discord"
+                    ),
                 )
         if len(self.downloader_list_dupe_tracking.keys()) > 0:
             # Build a report from our dict
@@ -248,7 +265,9 @@ class SteamBrowser(QWidget):
             show_warning(
                 title=self.tr("SteamCMD downloader"),
                 text=self.tr("You already have these mods in your download list!"),
-                information=self.tr("Skipping the following mods which are already present in your download list!"),
+                information=self.tr(
+                    "Skipping the following mods which are already present in your download list!"
+                ),
                 details=dupe_report,
             )
             self.downloader_list_dupe_tracking = {}
@@ -409,7 +428,7 @@ class SteamBrowser(QWidget):
                 install_button_removal_script, 0, lambda result: None
             )
             remove_top_banner = """
-            var element = document.getElementById("global_header"); 
+            var element = document.getElementById("global_header");
             var elements = document.getElementsByClassName("responsive_header")
             if (element) {
                 element.parentNode.removeChild(element);
@@ -420,7 +439,7 @@ class SteamBrowser(QWidget):
                 document.getElementsByClassName("apphub_HeaderTop workshop")[0].setAttribute("style","padding-top: 0px;")
                 document.getElementsByClassName("apphub_HomeHeaderContent")[0].setAttribute("style","padding-top: 0px;")
             }
-            
+
             """
             self.web_view.page().runJavaScript(
                 remove_top_banner, 0, lambda result: None
@@ -494,22 +513,22 @@ class SteamBrowser(QWidget):
                 add_collection_buttons_script = """
                 // find all collection items
                 var collectionItems = document.getElementsByClassName('collectionItem');
-                
+
                 for (var i = 0; i < collectionItems.length; i++) {
                     var item = collectionItems[i];
-                    
+
                     // get the mod id from the item
                     var modId = item.id.replace('sharedfile_', '');
-                    
+
                     // find the subscription controls div
                     var subscriptionControls = item.querySelector('.subscriptionControls');
                     if (!subscriptionControls) {
                         continue;
                     }
-                    
+
                     // check if mod is installed
                     var isInstalled = window.installedMods && window.installedMods.includes(modId);
-                    
+
                     if (isInstalled) {
                         // create installed indicator
                         var installedIndicator = document.createElement('div');
@@ -524,7 +543,7 @@ class SteamBrowser(QWidget):
                         installedIndicator.style.justifyContent = 'center';
                         installedIndicator.style.fontWeight = 'bold';
                         installedIndicator.style.fontSize = '16px';
-                        
+
                         // Replace subscription controls with our indicator
                         subscriptionControls.innerHTML = '';
                         subscriptionControls.appendChild(installedIndicator);
@@ -545,7 +564,7 @@ class SteamBrowser(QWidget):
                         linkButton.style.fontWeight = 'bold';
                         linkButton.style.fontSize = '20px';
                         linkButton.style.textDecoration = 'none';
-                        
+
                         // Replace subscription controls with our button
                         subscriptionControls.innerHTML = '';
                         subscriptionControls.appendChild(linkButton);

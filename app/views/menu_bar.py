@@ -45,6 +45,7 @@ class MenuBar(QObject):
         self.reset_all_warnings_action: QAction
         self.reset_all_mod_colors_action: QAction
         self.add_git_mod_action: QAction
+        self.add_zip_mod_action: QAction
         self.browse_workshop_action: QAction
         self.update_workshop_mods_action: QAction
         self.backup_instance_action: QAction
@@ -177,7 +178,9 @@ class MenuBar(QObject):
 
         if SystemInfo().operating_system != SystemInfo.OperatingSystem.MACOS:
             file_menu.addSeparator()
-            self.settings_action = self._add_action(file_menu, self.tr("Settings…"), "Ctrl+,")
+            self.settings_action = self._add_action(
+                file_menu, self.tr("Settings…"), "Ctrl+,"
+            )
             file_menu.addSeparator()
             self.quit_action = self._add_action(file_menu, self.tr("Exit"), "Ctrl+Q")
         return file_menu
@@ -211,9 +214,16 @@ class MenuBar(QObject):
             QMenu: The created "Download" menu.
         """
         download_menu = self.menu_bar.addMenu(self.tr("Download"))
-        self.add_git_mod_action = self._add_action(download_menu, self.tr("Add Git Mod"))
+        self.add_git_mod_action = self._add_action(
+            download_menu, self.tr("Add Git Mod")
+        )
+        self.add_zip_mod_action = self._add_action(
+            download_menu, self.tr("Add Zip Mod")
+        )
         download_menu.addSeparator()
-        self.browse_workshop_action = self._add_action(download_menu, self.tr("Browse Workshop"))
+        self.browse_workshop_action = self._add_action(
+            download_menu, self.tr("Browse Workshop")
+        )
         self.update_workshop_mods_action = self._add_action(
             download_menu, self.tr("Update Workshop Mods")
         )
@@ -237,7 +247,9 @@ class MenuBar(QObject):
             instances_menu, self.tr("Restore Instance…")
         )
         instances_menu.addSeparator()
-        self.clone_instance_action = self._add_action(instances_menu, self.tr("Clone Instance…"))
+        self.clone_instance_action = self._add_action(
+            instances_menu, self.tr("Clone Instance…")
+        )
         self.create_instance_action = self._add_action(
             instances_menu, self.tr("Create Instance…")
         )

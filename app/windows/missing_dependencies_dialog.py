@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.utils.gui_info import GUIInfo
 from app.utils.metadata import MetadataManager
 
 
@@ -25,6 +26,7 @@ class MissingDependenciesDialog(QDialog):
         Initialize the MissingDependenciesDialog.
         """
         super().__init__(parent)
+        self.setObjectName("missingDependenciesDialog")
         self.metadata_manager = MetadataManager.instance()
         self.selected_mods: set[str] = set()
         self.checkboxes: dict[str, QCheckBox] = {}
@@ -35,16 +37,18 @@ class MissingDependenciesDialog(QDialog):
         Set up the UI components of the dialog.
         """
         self.setWindowTitle("Dependency Manager")
-        self.resize(800, 600)
+        # Use GUIInfo to set the window size and position from settings
+        self.setGeometry(*GUIInfo().get_window_geometry())
 
         main_layout = QVBoxLayout(self)
 
         description = QLabel(
-            self.tr("Some mods in your active list require other mods to work properly.\n"
-            "Select which missing dependencies to add to your active mods list.")
+            self.tr(
+                "Some mods in your active list require other mods to work properly.\n"
+                "Select which missing dependencies to add to your active mods list."
+            )
         )
         description.setWordWrap(True)
-        description.setStyleSheet("font-size: 10pt; margin-bottom: 10px;")
         main_layout.addWidget(description)
 
         self.scroll_area = QScrollArea()
@@ -109,7 +113,7 @@ class MissingDependenciesDialog(QDialog):
 
         if local_deps:
             local_label = QLabel(self.tr("Local mods (available but not active):"))
-            local_label.setStyleSheet("font-weight: bold; color: green;")
+            local_label.setObjectName("localDepsLabel")
             self.scroll_layout.addWidget(local_label)
 
             for dep_id, requiring_mods in local_deps.items():
@@ -119,7 +123,7 @@ class MissingDependenciesDialog(QDialog):
 
         if download_deps:
             download_label = QLabel(self.tr("Mods that need to be downloaded:"))
-            download_label.setStyleSheet("font-weight: bold; color: orange;")
+            download_label.setObjectName("downloadDepsLabel")
             self.scroll_layout.addWidget(download_label)
 
             for dep_id, requiring_mods in download_deps.items():
@@ -178,6 +182,7 @@ class MissingDependenciesDialog(QDialog):
             requiring_mods: List of mod names that require this dependency.
         """
         group_widget = QWidget()
+        group_widget.setObjectName("dependencyGroupWidget")
         group_layout = QVBoxLayout(group_widget)
 
         dep_name = self.metadata_manager.get_mod_name_from_package_id(dep_id)
@@ -189,7 +194,9 @@ class MissingDependenciesDialog(QDialog):
         group_layout.addWidget(checkbox)
         self.checkboxes[dep_id] = checkbox
 
-        requiring_label = QLabel(self.tr("Required by:\n  • ") + "\n  • ".join(requiring_mods))
+        requiring_label = QLabel(
+            self.tr("Required by:\n  • ") + "\n  • ".join(requiring_mods)
+        )
         requiring_label.setStyleSheet("color: gray; margin-left: 20px;")
         requiring_label.setWordWrap(True)
         group_layout.addWidget(requiring_label)

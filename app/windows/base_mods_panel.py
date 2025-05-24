@@ -3,7 +3,7 @@ from functools import partial
 from typing import Callable, Self, TypeVar
 
 from loguru import logger
-from PySide6.QtCore import QEvent, QObject, QSize, Qt
+from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 
 from app.utils.event_bus import EventBus
 from app.utils.generic import check_if_steam_running
+from app.utils.gui_info import GUIInfo
 from app.utils.metadata import MetadataManager
 from app.views.dialogue import show_information, show_warning
 
@@ -50,7 +51,6 @@ class BaseModsPanel(QWidget):
         title_text: str,
         details_text: str,
         additional_columns: list[HeaderColumn],
-        minimum_size: QSize = QSize(800, 600),
     ):
         super().__init__()
         # Utility and Setup
@@ -153,7 +153,8 @@ class BaseModsPanel(QWidget):
         # Put it all together
         self.setWindowTitle(window_title)
         self.setLayout(layout)
-        self.setMinimumSize(minimum_size)
+        # Use GUIInfo to set the window size and position from settings
+        self.setGeometry(*GUIInfo().get_window_geometry())
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.KeyPress and event.type() == Qt.Key.Key_Escape:

@@ -7,7 +7,6 @@ from PySide6.QtCore import (
     QModelIndex,
     QPersistentModelIndex,
     QPoint,
-    QSize,
     Qt,
     Signal,
 )
@@ -32,6 +31,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.utils.app_info import AppInfo
+from app.utils.gui_info import GUIInfo
 from app.utils.metadata import MetadataManager
 from app.views.dialogue import show_warning
 
@@ -237,8 +237,12 @@ class RuleEditor(QWidget):
         )
         self.external_community_rules_loadBottom_checkbox.setObjectName("summaryValue")
         # user rules
-        self.external_user_rules_loadAfter_label = QLabel(self.tr("User Rules (loadAfter)"))
-        self.external_user_rules_loadBefore_label = QLabel(self.tr("User Rules (loadBefore)"))
+        self.external_user_rules_loadAfter_label = QLabel(
+            self.tr("User Rules (loadAfter)")
+        )
+        self.external_user_rules_loadBefore_label = QLabel(
+            self.tr("User Rules (loadBefore)")
+        )
         self.external_user_rules_loadAfter_list = QListWidget()
         self.external_user_rules_loadAfter_list.setContextMenuPolicy(
             Qt.ContextMenuPolicy.CustomContextMenu
@@ -281,7 +285,13 @@ class RuleEditor(QWidget):
         # Create the model and set column headers
         self.editor_model = QStandardItemModel(0, 5)
         self.editor_model.setHorizontalHeaderLabels(
-            [self.tr("Name"), self.tr("PackageId"), self.tr("Rule source"), self.tr("Rule type"), self.tr("Comment")]
+            [
+                self.tr("Name"),
+                self.tr("PackageId"),
+                self.tr("Rule source"),
+                self.tr("Rule type"),
+                self.tr("Comment"),
+            ]
         )
         # Create the table view and set the model
         self.editor_delegate = EditableDelegate()
@@ -338,7 +348,9 @@ class RuleEditor(QWidget):
             str(AppInfo().theme_data_folder / "default-icons" / "save_user_rules.png")
         )
         self.editor_save_user_rules_button = QToolButton()
-        self.editor_save_user_rules_button.setToolTip(self.tr("Save rules to userRules.json"))
+        self.editor_save_user_rules_button.setToolTip(
+            self.tr("Save rules to userRules.json")
+        )
         self.editor_save_user_rules_button.setIcon(self.editor_save_user_rules_icon)
         self.editor_save_user_rules_button.clicked.connect(
             partial(self._save_editor_rules, rules_source="User Rules")
@@ -348,7 +360,7 @@ class RuleEditor(QWidget):
         self.mods_search = QLineEdit()
         self.mods_search.setClearButtonEnabled(True)
         self.mods_search.textChanged.connect(self.signal_mods_search)
-        self.mods_search.setPlaceholderText("Search mods by name")
+        self.mods_search.setPlaceholderText(self.tr("Search mods by name"))
         self.mods_search_clear_button: object | QToolButton | None = (
             self.mods_search.findChild(QToolButton)
         )
@@ -499,7 +511,8 @@ class RuleEditor(QWidget):
         # Setup the window
         self.setWindowTitle("RimSort - Rule Editor")
         self.setLayout(layout)
-        self.setMinimumSize(QSize(800, 600))
+        # Use GUIInfo to set the window size and position from settings
+        self.setGeometry(*GUIInfo().get_window_geometry())
 
     def createDropEvent(
         self, destination_list: QListWidget
@@ -567,10 +580,11 @@ class RuleEditor(QWidget):
                 destination_list.setItemWidget(copied_item, QLabel(item_label_text))
                 # Add a new row in the editor - prompt user to enter a comment for their rule addition
                 args, ok = QInputDialog().getText(
-                    self,
+                    None, # type: ignore # Is okay to set parent to None
                     self.tr("Enter comment"),
-                    self.tr("""Enter a comment to annotate why this rule exists.
-                       This is useful for your own records, as well as others."""),
+                    self.tr(
+                       "Enter a comment to annotate why this rule exists."
+                       "This is useful for your own records, as well as others."),
                 )
                 if ok:
                     comment = args
@@ -636,13 +650,15 @@ class RuleEditor(QWidget):
         # Show tooltip for the items
         items[0].setToolTip(name)
         if rule_source == "About.xml":
-            tooltip_comment = "Rules from mods's About.xml cannot be modified. Only 'Community Rules' and 'User Rules' are allowed."
+            tooltip_comment = self.tr(
+                "Rules from mods's About.xml cannot be modified. Only 'Community Rules' and 'User Rules' are allowed."
+            )
             items[1].setToolTip(tooltip_comment)
             items[2].setToolTip(tooltip_comment)
             items[3].setToolTip(tooltip_comment)
             items[4].setToolTip(tooltip_comment)
         else:
-            tooltip_comment = "Rules can be Modified"
+            tooltip_comment = self.tr("Rules can be Modified.")
             items[1].setToolTip(tooltip_comment)
             items[2].setToolTip(tooltip_comment)
             items[3].setToolTip(tooltip_comment)
@@ -734,7 +750,9 @@ class RuleEditor(QWidget):
                     and metadata["packageid"].lower() == self.edit_packageid.lower()
                 ):
                     self.edit_name = metadata["name"]
-                    self.mod_label.setText(self.tr("Editing rules for: {name}").format(name=self.edit_name))
+                    self.mod_label.setText(
+                        self.tr("Editing rules for: {name}").format(name=self.edit_name)
+                    )
                     # All Lowercase!!!
                     # cSpell:enableCompoundWords
                     rule_types = {
@@ -1025,10 +1043,12 @@ class RuleEditor(QWidget):
                 if not self.block_comment_prompt:
                     # Add a new row in the editor - prompt user to enter a comment for their rule addition
                     args, ok = QInputDialog().getText(
-                        self,
+                        None, # type: ignore # Is okay to set parent to None
                         self.tr("Enter comment"),
-                        self.tr("Enter a comment to annotate why this rule exists."
-                        "This is useful for your own records, as well as others."),
+                        self.tr(
+                            "Enter a comment to annotate why this rule exists."
+                            "This is useful for your own records, as well as others."
+                        ),
                     )
                     if ok:
                         comment = args
@@ -1088,10 +1108,12 @@ class RuleEditor(QWidget):
             str: The comment entered by the user if dialogue is accepted, otherwise an empty string.
         """
         item, ok = QInputDialog().getText(
-            self,
+            None, # type: ignore # Is okay to set parent to None
             self.tr("Enter comment"),
-            self.tr("Enter a comment to annotate why this rule exists."
-            " This is useful for your own records, as well as others."),
+            self.tr(
+                "Enter a comment to annotate why this rule exists."
+                " This is useful for your own records, as well as others."
+            ),
         )
         if ok:
             return item
@@ -1111,7 +1133,9 @@ class RuleEditor(QWidget):
     def ruleItemContextMenuEvent(self, point: QPoint, _list: QListWidget) -> None:
         context_menu = QMenu(self)  # Rule item context menu event
         context_item = _list.itemAt(point)
-        remove_rule = context_menu.addAction("Remove this rule")  # remove this rule
+        remove_rule = context_menu.addAction(
+            self.tr("Remove this rule")
+        )  # remove this rule
         remove_rule.triggered.connect(
             partial(
                 self._remove_rule,

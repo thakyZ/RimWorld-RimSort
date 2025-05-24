@@ -128,9 +128,13 @@ class MetadataManager(QObject):
             if not os.path.exists(path):
                 self.show_warning_signal.emit(
                     self.tr("{db_type} DB is missing").format(db_type=db_type),
-                    self.tr("Configured {db_type} DB not found!").format(db_type=db_type),
-                    self.tr("Unable to initialize external metadata. There is no external {db_type} metadata being factored!\n"
-                    + "\nPlease make sure your Database location settings are correct.").format(db_type=db_type),
+                    self.tr("Configured {db_type} DB not found!").format(
+                        db_type=db_type
+                    ),
+                    self.tr(
+                        "Unable to initialize external metadata. There is no external {db_type} metadata being factored!\n"
+                        + "\nPlease make sure your Database location settings are correct."
+                    ).format(db_type=db_type),
                     f"{path}",
                 )
                 return False
@@ -138,9 +142,17 @@ class MetadataManager(QObject):
             if os.path.isdir(path) == (not expect_directory):
                 self.show_warning_signal.emit(
                     self.tr("{db_type} DB is missing").format(db_type=db_type),
-                    self.tr("Configured {db_type} DB path is {not_dir} a directory! Expected a {file_dir} path.").format(db_type=db_type,not_dir="not" if expect_directory else "",file_dir="directory" if expect_directory else "file",),
-                    self.tr("Unable to initialize external metadata. There is no external {db_type} metadata being factored!\n"
-                    + "\nPlease make sure your Database location settings are correct.").format(db_type=db_type),
+                    self.tr(
+                        "Configured {db_type} DB path is {not_dir} a directory! Expected a {file_dir} path."
+                    ).format(
+                        db_type=db_type,
+                        not_dir="not" if expect_directory else "",
+                        file_dir="directory" if expect_directory else "file",
+                    ),
+                    self.tr(
+                        "Unable to initialize external metadata. There is no external {db_type} metadata being factored!\n"
+                        + "\nPlease make sure your Database location settings are correct."
+                    ).format(db_type=db_type),
                     f"{path}",
                 )
                 return False
@@ -185,8 +197,15 @@ class MetadataManager(QObject):
                         self.show_warning_signal.emit(
                             self.tr("Steam DB metadata expired"),
                             self.tr("Steam DB is expired! Consider updating!\n"),
-                            self.tr("Steam DB last updated: {last_updated}\n\n"
-                          + "Falling back to cached, but EXPIRED Steam Database...").format(last_updated=strftime('%Y-%m-%d %H:%M:%S', localtime(db_data['version'] - life))),
+                            self.tr(
+                                "Steam DB last updated: {last_updated}\n\n"
+                                + "Falling back to cached, but EXPIRED Steam Database..."
+                            ).format(
+                                last_updated=strftime(
+                                    "%Y-%m-%d %H:%M:%S",
+                                    localtime(db_data["version"] - life),
+                                )
+                            ),
                             "",
                         )
                     db_json_data = db_data[
@@ -470,8 +489,16 @@ class MetadataManager(QObject):
             )
             self.show_warning_signal.emit(
                 self.tr("Missing Version.txt"),
-                self.tr("RimSort is unable to get the game version at the expected path: [{version_file_path}].").format(version_file_path=version_file_path),
-                self.tr("\nIs your game path {folder} set correctly? There should be a Version.txt file in the game install directory.").format(folder=self.settings_controller.settings.instances[self.settings_controller.settings.current_instance].game_folder),
+                self.tr(
+                    "RimSort is unable to get the game version at the expected path: [{version_file_path}]."
+                ).format(version_file_path=version_file_path),
+                self.tr(
+                    "\nIs your game path {folder} set correctly? There should be a Version.txt file in the game install directory."
+                ).format(
+                    folder=self.settings_controller.settings.instances[
+                        self.settings_controller.settings.current_instance
+                    ].game_folder
+                ),
                 "",
             )
         # Get and cache installed base game / DLC data
@@ -635,6 +662,8 @@ class MetadataManager(QObject):
 
         # Add dependencies to installed mods based on dependencies listed in About.xml TODO manifest.xml
         logger.info("Started compiling metadata from About.xml")
+        # Go through each mod and add dependencies
+        dependencies = None
         for uuid in uuids:
             logger.debug(
                 f"UUID: {uuid} packageid: "
@@ -1512,9 +1541,17 @@ class ModParser(QRunnable):
         data_malformed = None
         # Any pfid parsed will be stored here locally
         pfid = None
-        # Look for a case-insensitive "About" folder
+        # Define defaults for scenario
+        scenario_rsc_found = False
+        scenario_rsc_file = ""
+        scenario_data = {}
+        scenario_metadata = {}
+        # Define defaults for "About" folder and "About.xml" file
         invalid_about_folder_path_found = True
+        invalid_about_file_path_found = True
         about_folder_name = "About"
+        about_file_name = "About.xml"
+        # Look for a case-insensitive "About" folder
         for temp_file in os.scandir(mod_directory):
             if (
                 temp_file.name.lower() == about_folder_name.lower()
@@ -1524,11 +1561,6 @@ class ModParser(QRunnable):
                 invalid_about_folder_path_found = False
                 break
         # Look for a case-insensitive "About.xml" file
-        invalid_about_file_path_found = True
-        about_file_name = "About.xml"
-        scenario_rsc_found = False
-        scenario_rsc_file: str | None = None
-        scenario_metadata: dict[str, Any] = {}
         if not invalid_about_folder_path_found:
             for temp_file in os.scandir(str((directory_path / about_folder_name))):
                 if (
@@ -1538,7 +1570,7 @@ class ModParser(QRunnable):
                     about_file_name = temp_file.name
                     invalid_about_file_path_found = False
                     break
-        # Look for .rsc scenario files to load metadata from if we didn't find About.xml
+            # Look for .rsc scenario files to load metadata from if we didn't find About.xml
         if invalid_about_file_path_found:
             for temp_file in os.scandir(mod_directory):
                 if temp_file.name.lower().endswith(".rsc") and not temp_file.is_dir():
@@ -1847,7 +1879,6 @@ class ModParser(QRunnable):
         elif invalid_about_file_path_found and scenario_rsc_found and scenario_rsc_file:
             scenario_data_path = str(directory_path / scenario_rsc_file)
             logger.debug(f"Found scenario metadata at: {scenario_data_path}")
-            scenario_data = {}
             try:
                 # Try to parse .rsc
                 scenario_data = xml_path_to_json(scenario_data_path)
@@ -2622,8 +2653,10 @@ def check_if_pfids_blacklisted(
             text="Unable to check for blacklisted mods. Please configure a SteamDB for RimSort to use in Settings.",
         )
         return publishedfileids
-    # Warn attempt of blacklisted mods
+    # Define defaults for blacklisted mods
     blacklisted_mods = {}
+    publishedfileid = ""
+    # Check if any of the mods are blacklisted
     publishedfileid: str | None = None
     for publishedfileid in publishedfileids:
         if steamdb.get(publishedfileid, {}).get("blacklist"):
